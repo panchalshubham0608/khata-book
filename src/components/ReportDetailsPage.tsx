@@ -1,13 +1,18 @@
 // ReportDetailsPage.tsx
 import { useState } from "react";
-import { FiShare2, FiPlus, FiMic } from "react-icons/fi";
+import { FiShare2, FiPlus, FiTrash, FiMic } from "react-icons/fi";
 import "./ReportDetailsPage.css";
+import { FiArrowLeft } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import ConfirmDialog from "./ConfirmDialog";
+
 
 interface Expense {
     id: string;
     title: string;
     amount: number;
     date: string; // ISO string
+    deleted: boolean
 }
 
 interface Report {
@@ -31,9 +36,9 @@ const sampleReport: Report = {
     createdAt: "2025-11-28T10:00:00.000Z",
     owner: "शुभम",
     expenses: [
-        { id: "e1", title: "सब्ज़ियाँ", amount: 1500, date: "2025-11-01" },
-        { id: "e2", title: "दवा", amount: 1200, date: "2025-11-03" },
-        { id: "e3", title: "पेट्रोल", amount: 3000, date: "2025-11-10" },
+        { id: "e1", title: "सब्ज़ियाँ", amount: 1500, date: "2025-11-01", deleted: false },
+        { id: "e2", title: "दवा", amount: 1200, date: "2025-11-03", deleted: true },
+        { id: "e3", title: "पेट्रोल", amount: 3000, date: "2025-11-10", deleted: false },
     ],
 };
 
@@ -45,6 +50,9 @@ const ReportDetailsPage = () => {
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [expenseTitle, setExpenseTitle] = useState("");
     const [expenseAmount, setExpenseAmount] = useState("");
+    const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState(false);
+    const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState(false);
+    const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
 
     const handleAddExpense = () => {
         if (!expenseTitle || !expenseAmount) return;
@@ -63,8 +71,26 @@ const ReportDetailsPage = () => {
         setOpenExpenseModal(false);
     };
 
+
+    const handleExpenseDoubleClick = (expenseId: string) => {
+        console.log(expenseId);
+        setSelectedExpenseId(expenseId);
+        setShowDeleteExpenseDialog(true);
+    };
+
+    const deleteExpense = () => {
+        if (!selectedExpenseId) return;
+        setShowDeleteExpenseDialog(false);
+        setSelectedExpenseId(null);
+    };
+
     return (
         <div className="report-details-container">
+            <Link to="/reports" className="back-button">
+                <FiArrowLeft size={20} />
+                <span>वापस जाएँ</span>
+            </Link>
+
             <div className="report-header">
                 <h2 className="report-title">{report.title}</h2>
                 {report.shared && (
@@ -84,10 +110,18 @@ const ReportDetailsPage = () => {
                 </div>
             </div>
 
-            <h3 className="expenses-title">खर्चों की सूची</h3>
+            <div className="expenses-title">
+                खर्चों की सूची
+                <div className="expense-note">
+                    (खर्चा हटाने के लिए दो बार खर्चे पर दबाएँ)
+                </div>
+            </div>
+
             <div className="expenses-list">
                 {report.expenses.map((expense) => (
-                    <div className="expense-item" key={expense.id}>
+                    <div className={`expense-item ${expense.deleted && "deleted"}`} key={expense.id}
+                        onDoubleClick={() => !expense.deleted && handleExpenseDoubleClick(expense.id)}
+                    >
                         <div className="expense-info">
                             <p className="expense-title">{expense.title}</p>
                             <p className="expense-date">{new Date(expense.date).toLocaleDateString("hi-IN")}</p>
@@ -97,6 +131,12 @@ const ReportDetailsPage = () => {
                 ))}
             </div>
 
+            <button
+                className="delete-report-btn"
+                onClick={() => setOpenDeleteConfirmDialog(true)}
+            >
+                <FiTrash size={22} />
+            </button>
             <button
                 className="add-expense-btn"
                 onClick={() => setOpenExpenseModal(true)}
@@ -140,6 +180,29 @@ const ReportDetailsPage = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={openDeleteConfirmDialog}
+                title="रिपोर्ट हटाना चाहते हैं?"
+                message="यह क्रिया स्थायी है और वापस नहीं की जा सकती।"
+                confirmText="हटाएँ"
+                cancelText="रद्द करें"
+                onConfirm={() => {
+                    console.log("Report deleted");
+                    setOpenDeleteConfirmDialog(false);
+                }}
+                onCancel={() => setOpenDeleteConfirmDialog(false)}
+            />
+
+            <ConfirmDialog
+                open={showDeleteExpenseDialog}
+                title="खर्च हटाना चाहते हैं?"
+                message="यह खर्च स्थायी रूप से हट जाएगा।"
+                confirmText="हटाएँ"
+                cancelText="रद्द करें"
+                onConfirm={deleteExpense}
+                onCancel={() => setShowDeleteExpenseDialog(false)}
+            />
 
         </div>
     );

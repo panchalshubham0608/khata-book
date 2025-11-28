@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./ReportsPage.css";
 import { FiShare2, FiPlus } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 interface Report {
     id: string;
     title: string;
@@ -47,8 +48,8 @@ const sampleReports: Report[] = [
     }
 ];
 
-
 const ReportsPage = () => {
+    const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>(sampleReports);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -88,7 +89,7 @@ const ReportsPage = () => {
                         }
 
                         return (
-                            <div className="report-card" key={report.id}>
+                            <div className="report-card" key={report.id} onClick={() => navigate(`/reports/${report.id}`)}>
                                 <div className="report-header">
                                     <h3 className="report-title">{report.title}</h3>
 

@@ -6,6 +6,25 @@
     min-height: 100vh;
 }
 
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  border-radius: 8px;
+  color: #333;
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.back-button:hover {
+  background: #e4e4e4;
+}
+
 .report-header {
     display: flex;
     justify-content: space-between;
@@ -39,6 +58,7 @@
 
 .expenses-title {
     margin-top: 30px;
+    margin-bottom: 30px;
     font-size: 24px;
     font-weight: 600;
     color: #333;
@@ -60,10 +80,17 @@
     justify-content: space-between;
 }
 
+.deleted {
+  text-decoration: line-through;
+  color: #888; 
+  opacity: 0.5;  
+  pointer-events: none;
+}
+
+
 .expense-title {
     font-weight: 500;
     color: #333;
-    margin-bottom: 4px;
     margin: 0;
     font-size: 20px;
 }
@@ -126,11 +153,9 @@
 
 
 /* Floating Add Button */
+.delete-report-btn,
 .add-expense-btn {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    background: #0074d9;
     color: #fff;
     border: none;
     border-radius: 50%;
@@ -143,6 +168,18 @@
     cursor: pointer;
     transition: background 0.2s;
     z-index: 100;
+}
+
+.add-expense-btn {
+    bottom: 24px;
+    right: 24px;
+    background: #0074d9;
+}
+
+.delete-report-btn {
+    bottom: 24px;
+    left: 24px;
+    background: #DC3545;
 }
 
 .add-expense-btn:hover {
@@ -268,4 +305,11 @@
 
 .btn-add:hover {
     background: #006ae0;
+}
+
+.expense-note {
+  font-size: 14px;
+  color: #555;           /* subtle grey */
+  font-style: italic;     /* optional: italic for hint */
+  background: #f9f9f9;   /* light background optional */
 }

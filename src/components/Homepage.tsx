@@ -1,6 +1,8 @@
 import React from "react";
 import "./Homepage.css";
 import logo from "../assets/logo192.png";
+import { Link } from "react-router-dom";
+
 
 const HomePage: React.FC = () => {
   return (
@@ -15,9 +17,11 @@ const HomePage: React.FC = () => {
           अपने खाता-बही को पहले से कहीं बेहतर तरीके से मैनेज करें।
         </p>
 
-        <button className="home-button">
-          शुरू करे
-        </button>
+        <Link to="/reports">
+          <button className="home-button">
+            शुरू करे
+          </button>
+        </Link>
       </div>
     </div>
   );
