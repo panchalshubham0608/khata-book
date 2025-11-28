@@ -1,0 +1,26 @@
+import React from "react";
+import "./Homepage.css";
+import logo from "../assets/logo192.png";
+
+const HomePage: React.FC = () => {
+  return (
+    <div className="home-container">
+      <div className="home-content">
+        <img src={logo} className="home-logo" alt="Khata Book Logo" />
+
+        <h1 className="home-title">Khata-Book</h1>
+
+        <p className="home-description">
+          साफ़-सुथरे और आसान इंटरफ़ेस के साथ अपने दैनिक खर्चों को आसानी से ट्रैक करें।
+          अपने खाता-बही को पहले से कहीं बेहतर तरीके से मैनेज करें।
+        </p>
+
+        <button className="home-button">
+          शुरू करे
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default HomePage;
