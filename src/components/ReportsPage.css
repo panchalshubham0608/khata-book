@@ -104,3 +104,30 @@
 .add-report-btn:hover {
   background: #005bb5;
 }
+
+
+/* Top-bar container */
+.reports-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+}
+
+/* Profile icon */
+.reports-profile-icon {
+    font-size: 32px;
+    color: #444;
+    cursor: pointer;
+}
+
+/* Logout button */
+.reports-logout-btn {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    background-color: transparent;
+}

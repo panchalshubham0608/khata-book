@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FiShare2, FiPlus } from "react-icons/fi";
+import { FiShare2, FiPlus, FiUsers, FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
 import "./ReportsPage.css";
@@ -69,8 +69,19 @@ const ReportsPage = () => {
         setIsModalOpen(false);
     };
 
+    const handleLogout = () => {
+        console.log("User logged out!");
+    };
+
     return (
         <div className="reports-container">
+            <div className="reports-topbar">
+                <FiUsers className="reports-profile-icon" />
+                <button className="reports-logout-btn" onClick={handleLogout}>
+                    <FiLogOut />
+                </button>
+            </div>
+
             <h2 className="reports-title">आपके खर्चे की सूचि</h2>
 
             <div className="reports-list-container">
