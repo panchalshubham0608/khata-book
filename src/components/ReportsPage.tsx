@@ -54,24 +54,18 @@ const ReportsPage = () => {
     const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>(sampleReports);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newTitle, setNewTitle] = useState("");
-    const [newBudget, setNewBudget] = useState("");
 
-    const handleAddReport = () => {
-        if (!newTitle || !newBudget) return;
-
+    const handleAddReport = (title: string, amount: string) => {
         const newReport: Report = {
             id: Date.now().toString(),
-            title: newTitle,
-            budget: parseInt(newBudget),
+            title,
+            budget: parseInt(amount),
             spent: 0,
             shared: false,
         };
         console.log(newReport);
 
         setReports([newReport, ...reports]);
-        setNewTitle("");
-        setNewBudget("");
         setIsModalOpen(false);
     };
 
@@ -135,10 +129,6 @@ const ReportsPage = () => {
                 <AmountModalInput
                     header="नई रिपोर्ट जोड़ें"
                     titlePlaceholder="रिपोर्ट का नाम"
-                    title={newTitle}
-                    setTitle={setNewTitle}
-                    amount={newBudget}
-                    setAmount={setNewBudget}
                     amountPlaceholder="बजट राशि"
                     onReject={() => setIsModalOpen(false)}
                     onAccept={handleAddReport}

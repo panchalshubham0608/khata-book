@@ -1,19 +1,35 @@
 import VoiceInput from "./VoiceInput";
 import "./AmountModalInput.css";
+import { useState, useCallback } from "react";
 
 interface AmountModalInputProps {
     header: string;
-    title: string;
-    setTitle: (title: string) => void;
     titlePlaceholder: string;
-    amount: string;
-    setAmount: (amount: string) => void;
     amountPlaceholder: string;
-    onAccept: () => void;
+    onAccept: (title: string, amount: string) => void;
     onReject: () => void;
 }
 
 const AmountModalInput = (props: AmountModalInputProps) => {
+    const [title, setTitle] = useState<string>("");
+    const [amount, setAmount] = useState<string>("");
+
+    const clearInputs = () => {
+        setTitle("");
+        setAmount("");
+    }
+
+    const handleAccept = useCallback(() => {
+        props.onAccept(title, amount);
+        clearInputs();
+    }, [title, amount]);
+
+    const handleReject = useCallback(() => {
+        clearInputs();
+        props.onReject();
+    }, []);
+
+
     return (
         <div className="modal-overlay">
             <div className="modal-content">
@@ -21,20 +37,20 @@ const AmountModalInput = (props: AmountModalInputProps) => {
                 <div>
                     <VoiceInput
                         placeholder={props.titlePlaceholder}
-                        value={props.title}
-                        onChange={props.setTitle} />
+                        value={title}
+                        onChange={setTitle} />
                     <input
                         type="number"
                         placeholder={props.amountPlaceholder}
-                        value={props.amount}
+                        value={amount}
                         className="input-field"
-                        onChange={(e) => props.setAmount(e.target.value)}
+                        onChange={(e) => setAmount(e.target.value)}
                     />
                 </div>
 
                 <div className="modal-footer">
-                    <button className="btn-cancel" onClick={props.onReject}>रद्द करें</button>
-                    <button className="btn-add" onClick={props.onAccept}>जोड़ें</button>
+                    <button className="btn-cancel" onClick={handleReject}>रद्द करें</button>
+                    <button className="btn-add" onClick={handleAccept}>जोड़ें</button>
                 </div>
             </div>
         </div>

@@ -20,6 +20,7 @@ const VoicePopup: React.FC<VoicePopupProps> = ({ onResult, onClose }) => {
         const recognition = new SpeechRecognition();
 
         recognition.lang = "hi-IN"; // Hindi
+        recognition.continuous = true; // Prevent early onend
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
@@ -35,7 +36,7 @@ const VoicePopup: React.FC<VoicePopupProps> = ({ onResult, onClose }) => {
         };
 
         recognition.onend = () => {
-            onClose();
+            console.log("Speech ended but keeping popup open");
         };
     }, []);
 

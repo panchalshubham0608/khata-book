@@ -45,31 +45,29 @@ const sampleReport: Report = {
 
 
 const ReportDetailsPage = () => {
-    const report = sampleReport;
+    const [report, setReport] = useState<Report>(sampleReport);
     const remainingBudget = report.budget - report.spent;
 
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
-    const [expenseTitle, setExpenseTitle] = useState("");
-    const [expenseAmount, setExpenseAmount] = useState("");
-    const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState(false);
-    const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState(false);
+    const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState<boolean>(false);
+    const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
 
-    const handleAddExpense = () => {
-        if (!expenseTitle || !expenseAmount) return;
-
+    const handleAddExpense = (title: string, amount: string) => {
         const newExp = {
-            id: Date.now(),
-            title: expenseTitle,
-            amount: Number(expenseAmount),
+            id: Date.now().toString(), title, amount: parseInt(amount), date: Date.now().toString(), deleted: false
         };
 
         // TODO: Add to your backend or local state
         console.log("New Expense →", newExp);
-
-        setExpenseTitle("");
-        setExpenseAmount("");
         setOpenExpenseModal(false);
+        setReport({
+            ...report,
+            expenses: [
+                newExp,
+                ...report.expenses,
+            ]
+        });
     };
 
 
@@ -83,6 +81,13 @@ const ReportDetailsPage = () => {
         if (!selectedExpenseId) return;
         setShowDeleteExpenseDialog(false);
         setSelectedExpenseId(null);
+        let expenseIdx = report.expenses.findIndex(report => report.id === selectedExpenseId);
+        if (expenseIdx !== -1) {
+            setReport({
+                ...report,
+                expenses: report.expenses.splice(expenseIdx, 1)
+            });
+        }
     };
 
     return (
@@ -149,10 +154,6 @@ const ReportDetailsPage = () => {
                 <AmountModalInput
                     header="नया ख़र्च जोड़ें"
                     titlePlaceholder="ख़र्च का नाम"
-                    title={expenseTitle}
-                    setTitle={setExpenseTitle}
-                    amount={expenseAmount}
-                    setAmount={setExpenseAmount}
                     amountPlaceholder="खर्च की राशि"
                     onReject={() => setOpenExpenseModal(false)}
                     onAccept={handleAddExpense}

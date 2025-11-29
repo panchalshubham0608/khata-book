@@ -35,7 +35,8 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ value, onChange, placeholder })
                         onChange(text);
                         setShowVoicePopup(false);
                     }}
-                    onClose={() => setShowVoicePopup(false)}
+                    onClose={() =>
+                        setShowVoicePopup(false)}
                 />
             )}
         </div>
