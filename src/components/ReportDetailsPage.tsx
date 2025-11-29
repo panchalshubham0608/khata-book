@@ -1,6 +1,6 @@
 // ReportDetailsPage.tsx
 import { useState } from "react";
-import { FiShare2, FiPlus, FiTrash } from "react-icons/fi";
+import { FiShare2, FiPlus } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import ConfirmDialog from "./ConfirmDialog";

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiShare2, FiPlus, FiUsers, FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
+import { signOut, type User } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 import "./ReportsPage.css";
+
 
 interface Report {
     id: string;
@@ -51,9 +54,21 @@ const sampleReports: Report[] = [
 ];
 
 const ReportsPage = () => {
+    console.log(auth.currentUser);
     const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>(sampleReports);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((currentUser: User | null) => {
+            setUser(currentUser);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     const handleAddReport = (title: string, amount: string) => {
         const newReport: Report = {
@@ -69,14 +84,24 @@ const ReportsPage = () => {
         setIsModalOpen(false);
     };
 
-    const handleLogout = () => {
-        console.log("User logged out!");
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigate("/", { replace: true });
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
     };
 
     return (
         <div className="reports-container">
             <div className="reports-topbar">
-                <FiUsers className="reports-profile-icon" />
+                {user?.photoURL && user?.displayName ?
+                <span className="reports-profile">
+                    <img src={user.photoURL} className="reports-profile-icon" />
+                </span>
+                    :
+                    <FiUsers className="reports-profile-icon" />}
                 <button className="reports-logout-btn" onClick={handleLogout}>
                     <FiLogOut />
                 </button>
