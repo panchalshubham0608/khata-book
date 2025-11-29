@@ -1,14 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from './components/Homepage'
-import ReportsPage from './components/ReportsPage'
-import ReportDetailsPage from './components/ReportDetailsPage'
+import HomePage from './components/Homepage';
+import ReportsPage from './components/ReportsPage';
+import ReportDetailsPage from './components/ReportDetailsPage';
 import ScrollToTop from "./components/ScrollToTop";
-import './App.css'
-
+import './App.css';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/khata-book">
       <ScrollToTop />
       <Routes>
         <Route path='/' element={<HomePage />} />
@@ -16,7 +15,7 @@ function App() {
         <Route path='/reports/:reportId' element={<ReportDetailsPage />} />
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;
