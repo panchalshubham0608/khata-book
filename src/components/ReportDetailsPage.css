@@ -153,7 +153,6 @@
 
 
 /* Floating Add Button */
-.delete-report-btn,
 .add-expense-btn {
     position: fixed;
     color: #fff;
@@ -168,18 +167,9 @@
     cursor: pointer;
     transition: background 0.2s;
     z-index: 100;
-}
-
-.add-expense-btn {
     bottom: 24px;
     right: 24px;
     background: #0074d9;
-}
-
-.delete-report-btn {
-    bottom: 24px;
-    left: 24px;
-    background: #DC3545;
 }
 
 .add-expense-btn:hover {

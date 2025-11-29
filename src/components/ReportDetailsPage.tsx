@@ -5,8 +5,8 @@ import { FiArrowLeft } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import ConfirmDialog from "./ConfirmDialog";
 import AmountModalInput from "./AmountModalInput";
+import ReportHamburgerMenu from "./ReportHamburgerMenu";
 import "./ReportDetailsPage.css";
-
 
 interface Expense {
     id: string;
@@ -49,9 +49,10 @@ const ReportDetailsPage = () => {
     const remainingBudget = report.budget - report.spent;
 
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
-    const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState<boolean>(false);
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+    const [showAccessPopup, setShowAccessPopup] = useState(false);
+const [sharedWith, setSharedWith] = useState(["test@gmail.com"]);
 
     const handleAddExpense = (title: string, amount: string) => {
         const newExp = {
@@ -90,12 +91,25 @@ const ReportDetailsPage = () => {
         }
     };
 
+    const addEmail = (email: string) => {
+    setSharedWith([...sharedWith, email]);
+};
+
+const removeEmail = (email: string) => {
+    setSharedWith(sharedWith.filter(e => e !== email));
+};
+
     return (
         <div className="report-details-container">
             <Link to="/reports" className="back-button">
                 <FiArrowLeft size={20} />
                 <span>वापस जाएँ</span>
             </Link>
+            <ReportHamburgerMenu
+                onDeleteReport={() => {
+                    console.log("Report deleted!");
+                }}
+            />
 
             <div className="report-header">
                 <h2 className="report-title">{report.title}</h2>
@@ -138,12 +152,6 @@ const ReportDetailsPage = () => {
             </div>
 
             <button
-                className="delete-report-btn"
-                onClick={() => setOpenDeleteConfirmDialog(true)}
-            >
-                <FiTrash size={22} />
-            </button>
-            <button
                 className="add-expense-btn"
                 onClick={() => setOpenExpenseModal(true)}
             >
@@ -159,19 +167,6 @@ const ReportDetailsPage = () => {
                     onAccept={handleAddExpense}
                 />
             }
-
-            <ConfirmDialog
-                open={openDeleteConfirmDialog}
-                title="रिपोर्ट हटाना चाहते हैं?"
-                message="यह क्रिया स्थायी है और वापस नहीं की जा सकती।"
-                confirmText="हटाएँ"
-                cancelText="रद्द करें"
-                onConfirm={() => {
-                    console.log("Report deleted");
-                    setOpenDeleteConfirmDialog(false);
-                }}
-                onCancel={() => setOpenDeleteConfirmDialog(false)}
-            />
 
             <ConfirmDialog
                 open={showDeleteExpenseDialog}
