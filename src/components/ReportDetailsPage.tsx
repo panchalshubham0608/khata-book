@@ -1,10 +1,11 @@
 // ReportDetailsPage.tsx
 import { useState } from "react";
-import { FiShare2, FiPlus, FiTrash, FiMic } from "react-icons/fi";
-import "./ReportDetailsPage.css";
+import { FiShare2, FiPlus, FiTrash } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import ConfirmDialog from "./ConfirmDialog";
+import AmountModalInput from "./AmountModalInput";
+import "./ReportDetailsPage.css";
 
 
 interface Expense {
@@ -144,42 +145,19 @@ const ReportDetailsPage = () => {
                 <FiPlus size={22} />
             </button>
 
-            {openExpenseModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h2 className="text-lg font-semibold mb-4">नया ख़र्च जोड़ें</h2>
-                        <div className="flex flex-col gap-3">
-                            <div className="input-with-voice input-group">
-                                <input
-                                    type="text"
-                                    placeholder="ख़र्च का नाम"
-                                    value={expenseTitle}
-                                    onChange={(e) => setExpenseTitle(e.target.value)}
-                                    className="input-field"
-                                />
-                                <button className="voice-btn">
-                                    <FiMic size={24} />
-                                </button>
-                            </div>
-
-
-                            <div className="input-group">
-                                <input
-                                    type="number"
-                                    placeholder="खर्च की राशि"
-                                    value={expenseAmount}
-                                    onChange={(e) => setExpenseAmount(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="modal-footer">
-                            <button className="btn-cancel" onClick={() => setOpenExpenseModal(false)}>रद्द करें</button>
-                            <button className="btn-add" onClick={handleAddExpense}>जोड़ें</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {openExpenseModal &&
+                <AmountModalInput
+                    header="नया ख़र्च जोड़ें"
+                    titlePlaceholder="ख़र्च का नाम"
+                    title={expenseTitle}
+                    setTitle={setExpenseTitle}
+                    amount={expenseAmount}
+                    setAmount={setExpenseAmount}
+                    amountPlaceholder="खर्च की राशि"
+                    onReject={() => setOpenExpenseModal(false)}
+                    onAccept={handleAddExpense}
+                />
+            }
 
             <ConfirmDialog
                 open={openDeleteConfirmDialog}

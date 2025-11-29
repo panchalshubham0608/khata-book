@@ -1,7 +1,9 @@
 import { useState } from "react";
-import "./ReportsPage.css";
 import { FiShare2, FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import AmountModalInput from "./AmountModalInput";
+import "./ReportsPage.css";
+
 interface Report {
     id: string;
     title: string;
@@ -130,26 +132,17 @@ const ReportsPage = () => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3>नई रिपोर्ट जोड़ें</h3>
-                        <input
-                            type="text"
-                            placeholder="रिपोर्ट का नाम"
-                            value={newTitle}
-                            onChange={(e) => setNewTitle(e.target.value)}
-                        />
-                        <input
-                            type="number"
-                            placeholder="बजट राशि"
-                            value={newBudget}
-                            onChange={(e) => setNewBudget(e.target.value)}
-                        />
-                        <button className="modal-add-btn" onClick={handleAddReport}>
-                            जोड़ें
-                        </button>
-                    </div>
-                </div>
+                <AmountModalInput
+                    header="नई रिपोर्ट जोड़ें"
+                    titlePlaceholder="रिपोर्ट का नाम"
+                    title={newTitle}
+                    setTitle={setNewTitle}
+                    amount={newBudget}
+                    setAmount={setNewBudget}
+                    amountPlaceholder="बजट राशि"
+                    onReject={() => setIsModalOpen(false)}
+                    onAccept={handleAddReport}
+                />
             )}
 
         </div>

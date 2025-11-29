@@ -1,0 +1,30 @@
+
+/* ---- POPUP ---- */
+.voice-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+
+.voice-popup-box {
+    background: #fff;
+    padding: 22px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 280px;
+    text-align: center;
+}
+
+.voice-popup-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
