@@ -20,7 +20,6 @@ interface Report {
     id: string;
     title: string;
     budget: number;
-    spent: number;
     shared: boolean;
     createdAt: string; // ISO string
     owner: string;     // e.g., "शुभम"
@@ -32,31 +31,32 @@ const sampleReport: Report = {
     id: "1",
     title: "मासिक खर्च",
     budget: 15000,
-    spent: 8200,
     shared: true,
     createdAt: "2025-11-28T10:00:00.000Z",
     owner: "शुभम",
     expenses: [
-        { id: "e1", title: "सब्ज़ियाँ", amount: 1500, date: "2025-11-01", deleted: false },
-        { id: "e2", title: "दवा", amount: 1200, date: "2025-11-03", deleted: true },
-        { id: "e3", title: "पेट्रोल", amount: 3000, date: "2025-11-10", deleted: false },
+        { id: "e1", title: "सब्ज़ियाँ", amount: -1500, date: "2025-11-01", deleted: false },
+        { id: "e2", title: "दवा", amount: -1200, date: "2025-11-03", deleted: true },
+        { id: "e3", title: "टॉप उप", amount: 500, date: "2025-11-10", deleted: false },
+        { id: "e3", title: "पेट्रोल", amount: -3000, date: "2025-11-10", deleted: false },
     ],
 };
 
 
 const ReportDetailsPage = () => {
     const [report, setReport] = useState<Report>(sampleReport);
-    const remainingBudget = report.budget - report.spent;
 
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-    const [showAccessPopup, setShowAccessPopup] = useState(false);
-const [sharedWith, setSharedWith] = useState(["test@gmail.com"]);
+    const [sharedWith, setSharedWith] = useState(["test@gmail.com"]);
+    const topupAmount = report.expenses.filter(e => !e.deleted && e.amount > 0).reduce((total, e) => total + e.amount, 0);
+    const spentAmount = Math.abs(report.expenses.filter(e => !e.deleted && e.amount < 0).reduce((total, e) => total + e.amount, 0));
+    const remainingBudget = report.budget + topupAmount - spentAmount;
 
-    const handleAddExpense = (title: string, amount: string) => {
+    const handleAddExpense = (title: string, amount: number) => {
         const newExp = {
-            id: Date.now().toString(), title, amount: parseInt(amount), date: Date.now().toString(), deleted: false
+            id: Date.now().toString(), title, amount, date: Date.now().toString(), deleted: false
         };
 
         // TODO: Add to your backend or local state
@@ -92,12 +92,12 @@ const [sharedWith, setSharedWith] = useState(["test@gmail.com"]);
     };
 
     const addEmail = (email: string) => {
-    setSharedWith([...sharedWith, email]);
-};
+        setSharedWith([...sharedWith, email]);
+    };
 
-const removeEmail = (email: string) => {
-    setSharedWith(sharedWith.filter(e => e !== email));
-};
+    const removeEmail = (email: string) => {
+        setSharedWith(sharedWith.filter(e => e !== email));
+    };
 
     return (
         <div className="report-details-container">
@@ -123,10 +123,10 @@ const removeEmail = (email: string) => {
             <div className="report-summary">
                 <div className="chips-container">
                     <span className="chip">बजट: ₹{report.budget.toLocaleString()}</span>
-                    <span className="chip spent">खर्च: ₹{report.spent.toLocaleString()}</span>
+                    <span className="chip spent">खर्च: ₹{spentAmount.toLocaleString()}</span>
                     <span className="chip remaining">शेष: ₹{remainingBudget.toLocaleString()}</span>
                     <span className="chip date">निर्मित: {new Date(report.createdAt).toLocaleDateString("hi-IN")}</span>
-                    <span className="chip owner">मालिक: {report.owner}</span>
+                    <span className="chip topup">टॉप उप: {topupAmount}</span>
                 </div>
             </div>
 
@@ -146,7 +146,7 @@ const removeEmail = (email: string) => {
                             <p className="expense-title">{expense.title}</p>
                             <p className="expense-date">{new Date(expense.date).toLocaleDateString("hi-IN")}</p>
                         </div>
-                        <p className="expense-amount">₹ {expense.amount.toLocaleString()}</p>
+                        <p className={`expense-amount ${expense.amount < 0 ? 'debit' : 'credit'}`}>₹ {Math.abs(expense.amount).toLocaleString()}</p>
                     </div>
                 ))}
             </div>
