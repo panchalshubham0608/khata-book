@@ -91,14 +91,6 @@ const ReportDetailsPage = () => {
         }
     };
 
-    const addEmail = (email: string) => {
-        setSharedWith([...sharedWith, email]);
-    };
-
-    const removeEmail = (email: string) => {
-        setSharedWith(sharedWith.filter(e => e !== email));
-    };
-
     return (
         <div className="report-details-container">
             <Link to="/reports" className="back-button">
