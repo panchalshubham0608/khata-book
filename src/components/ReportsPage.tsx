@@ -1,105 +1,91 @@
 import { useState, useEffect } from "react";
-import { FiShare2, FiPlus, FiUsers, FiLogOut } from "react-icons/fi";
+import { FiShare2, FiPlus, FiUsers, FiLogOut, FiFileText } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
 import { signOut, type User } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import "./ReportsPage.css";
-
-
-interface Report {
-    id: string;
-    title: string;
-    budget: number;
-    spent: number;
-    shared: boolean;
-}
-
-const sampleReports: Report[] = [
-    {
-        id: "1",
-        title: "मासिक खर्च",
-        budget: 15000,
-        spent: 8200,
-        shared: false,
-    },
-    {
-        id: "2",
-        title: "माता-पिता की दवाइयाँ और आवश्यकताएँ",
-        budget: 5000,
-        spent: 4200,
-        shared: true,
-    },
-    {
-        id: "3",
-        title: "सब्ज़ियाँ और किराना",
-        budget: 6000,
-        spent: 3400,
-        shared: false,
-    },
-    {
-        id: "4",
-        title: "बिजली और पानी का बिल",
-        budget: 3000,
-        spent: 2100,
-        shared: false,
-    },
-    {
-        id: "5",
-        title: "यात्रा और पेट्रोल खर्च",
-        budget: 7000,
-        spent: 500,
-        shared: false,
-    }
-];
+import type { Report } from "../firebase/types";
+import { createReport, getReports } from "../firebase/reportService";
+import { useAlert } from "../hooks/useAlert";
+import Alert from "./Alert";
+import Loader from "./Loader";
+import { shared, spentAmount, topupAmount } from "../utils/reportUtils";
 
 const ReportsPage = () => {
-    console.log(auth.currentUser);
     const navigate = useNavigate();
-    const [reports, setReports] = useState<Report[]>(sampleReports);
+    const [reports, setReports] = useState<Report[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const { alert, showAlert } = useAlert();
+
+    const fetchReports = async (email: string) => {
+        try {
+            setLoading(true);
+            const userReports = await getReports(email);
+            setReports(userReports);
+        } catch (err) {
+            console.error(err);
+            showAlert("रिपोर्ट लाने में समस्या हुई", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((currentUser: User | null) => {
-            setUser(currentUser);
-            setLoading(false);
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user?.email) {
+                setUser(user);
+                fetchReports(user.email);
+            } else {
+                setReports([]);
+                setLoading(false);
+            }
         });
 
         return () => unsubscribe();
     }, []);
 
-    const handleAddReport = (title: string, amount: string) => {
-        const newReport: Report = {
-            id: Date.now().toString(),
-            title,
-            budget: parseInt(amount),
-            spent: 0,
-            shared: false,
-        };
-        console.log(newReport);
+    const handleAddReport = async (title: string, amount: number) => {
+        try {
+            setLoading(true);
+            await createReport({ title, budget: amount });
+            setIsModalOpen(false);
 
-        setReports([newReport, ...reports]);
-        setIsModalOpen(false);
+            // Refetch reports after adding
+            if (auth.currentUser?.email) {
+                await fetchReports(auth.currentUser.email);
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert("रिपोर्ट बनाने में समस्या हुई", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleLogout = async () => {
         try {
+            setLoading(true);
             await signOut(auth);
             navigate("/", { replace: true });
         } catch (error) {
             console.error("Logout failed:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className="reports-container">
+            <Alert alert={alert} />
+            <Loader visible={loading} />
             <div className="reports-topbar">
                 {user?.photoURL && user?.displayName ?
-                <span className="reports-profile">
-                    <img src={user.photoURL} className="reports-profile-icon" />
-                </span>
+                    <span className="reports-profile">
+                        <img src={user.photoURL} className="reports-profile-icon" />
+                    </span>
                     :
                     <FiUsers className="reports-profile-icon" />}
                 <button className="reports-logout-btn" onClick={handleLogout}>
@@ -112,7 +98,7 @@ const ReportsPage = () => {
             <div className="reports-list-container">
                 <div className="reports-list">
                     {reports.map((report) => {
-                        const percentage = Math.min((report.spent / report.budget) * 100, 100);
+                        const percentage = Math.min((spentAmount(report) / (report.budget + topupAmount(report))) * 100, 100);
                         let progressColor = "#28a745";
                         if (percentage > 75) {
                             progressColor = "#dc3545";
@@ -125,7 +111,7 @@ const ReportsPage = () => {
                                 <div className="report-header">
                                     <h3 className="report-title">{report.title}</h3>
 
-                                    {report.shared && (
+                                    {shared(report) && (
                                         <span className="shared-badge">
                                             <FiShare2 size={14} /> साझा
                                         </span>
@@ -137,7 +123,7 @@ const ReportsPage = () => {
                                         बजट : ₹{report.budget.toLocaleString()}
                                     </p>
                                     <p className="report-spent">
-                                        खर्चा : ₹{report.spent.toLocaleString()}
+                                        खर्चा : ₹{spentAmount(report).toLocaleString()}
                                     </p>
                                 </div>
 
@@ -150,9 +136,13 @@ const ReportsPage = () => {
                             </div>
                         );
                     })}
-
+                    {reports.length === 0 &&
+                        <div className="no-reports-container">
+                            <FiFileText size={48} className="no-reports-icon" />
+                            <p className="no-reports-text">अभी कोई रिपोर्ट नहीं है</p>
+                            <p className="no-reports-subtext">नई रिपोर्ट बनाने के लिए नीचे का बटन दबाएँ</p>
+                        </div>}
                 </div>
-
             </div>
 
             {/* Floating Add Button */}

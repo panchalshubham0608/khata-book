@@ -10,18 +10,34 @@ import {
   arrayRemove,
   arrayUnion
 } from "firebase/firestore";
-import { db } from "./firebase"; 
+import { db, auth } from "./firebase";
 import type { Expense, Report } from "./types";
 
+interface CreateReportOptions {
+  title: string;
+  budget: number;
+}
 
-export async function createReport(report : Report) {
-  const reportRef = await addDoc(collection(db, "reports"), {
-    ...report,
+export async function createReport(options: CreateReportOptions): Promise<Report> {
+  const user = auth.currentUser;
+  if (!user?.email) {
+    throw new Error("यूज़र का ईमेल उपलब्ध नहीं है। कृपया लॉगिन करें।");
+  }
+  const reportData: Omit<Report, "id"> = {
+    title: options.title,
+    budget: options.budget,
+    owner: user.email,
     sharedWith: [],
-    createdAt: Date.now(),
-  });
+    expenses: [],
+    createdAt: new Date().toISOString(),
+  };
 
-  return reportRef.id;
+  const reportRef = await addDoc(collection(db, "reports"), reportData);
+
+  return {
+    id: reportRef.id,
+    ...reportData,
+  };
 }
 
 export async function deleteReport(reportId: string) {
@@ -32,7 +48,7 @@ export async function deleteReport(reportId: string) {
   });
 }
 
-export async function shareReport(reportId: string, email : string) {
+export async function shareReport(reportId: string, email: string) {
   const ref = doc(db, "reports", reportId);
   await updateDoc(ref, {
     sharedWith: arrayUnion(email),
@@ -46,7 +62,7 @@ export async function unshareReport(reportId: string, email: string) {
   });
 }
 
-export async function createExpense(reportId: string, expense : Expense) {
+export async function createExpense(reportId: string, expense: Expense) {
   const expensesRef = collection(db, "reports", reportId, "expenses");
   const expenseRef = await addDoc(expensesRef, {
     ...expense,
@@ -71,7 +87,7 @@ export async function getReports(email: string): Promise<Report[]> {
 
   const ownerQ = query(
     reportsRef,
-    where("ownerEmail", "==", email)
+    where("owner", "==", email)
   );
 
   const [sharedSnap, ownerSnap] = await Promise.all([
