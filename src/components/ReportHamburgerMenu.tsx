@@ -1,14 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FiMoreVertical, FiTrash2, FiUsers } from "react-icons/fi";
+import { FiMoreVertical, FiTrash2, FiUsers, FiPlusCircle } from "react-icons/fi";
 import ConfirmDialog from "./ConfirmDialog";
 import ManageAccessPopup from "./ManageAccessPopup";
 import "./ReportHamburgerMenu.css";
+import AmountModalInput from "./AmountModalInput";
 
 interface ReportHamburgerMenuProps {
   onAddEmail?: (email: string) => void;
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
   labelManageAccess?: string;
+  labelTopup?: string;
   labelDeleteReport?: string;
 }
 
@@ -17,11 +19,13 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   onRemoveEmail,
   onDeleteReport,
   labelManageAccess = "पहुँच नियंत्रण",
+  labelTopup = "टॉप उप",
   labelDeleteReport = "रिपोर्ट हटाएँ",
 }) => {
   const [open, setOpen] = useState(false);
   const [showDeleteReportDialog, setShowDeleteReportDialog] = useState<boolean>(false);
   const [showAccessPopup, setShowAccessPopup] = useState<boolean>(false);
+  const [showTopupInput, setShowTopupInput] = useState<boolean>(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -54,6 +58,11 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
     setShowDeleteReportDialog(true);
   };
 
+  const handleTopup = (_: string, amount: number) => {
+    console.log("top up " + amount);
+    setShowTopupInput(false);
+  };
+
   return (
     <div className="hamburger-root" ref={rootRef}>
       <button
@@ -75,6 +84,15 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
           >
             <FiUsers size={16} className="hamburger-icon" />
             <span className="hamburger-text">{labelManageAccess}</span>
+          </button>
+
+          <button
+            className="hamburger-item"
+            role="menuitem"
+            onClick={() => setShowTopupInput(true)}
+          >
+            <FiPlusCircle size={16} className="hamburger-icon" />
+            <span className="hamburger-text">{labelTopup}</span>
           </button>
 
           <button
@@ -115,6 +133,14 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
         }}
         onClose={() => setShowAccessPopup(false)}
       />}
+
+      {showTopupInput &&
+        <AmountModalInput
+          header="बजट में टॉप उप करे"
+          amountPlaceholder="टॉप उप राशि"
+          onAccept={handleTopup}
+          onReject={() => setShowTopupInput(false)} />
+      }
 
     </div>
   );

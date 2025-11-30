@@ -1,16 +1,19 @@
 import VoiceInput from "./VoiceInput";
 import "./AmountModalInput.css";
 import { useState, useCallback } from "react";
+import { useAlert } from "../hooks/useAlert";
+import Alert from "./Alert";
 
 interface AmountModalInputProps {
     header: string;
-    titlePlaceholder: string;
+    titlePlaceholder?: string;
     amountPlaceholder: string;
-    onAccept: (title: string, amount: string) => void;
+    onAccept: (title: string, amount: number) => void;
     onReject: () => void;
 }
 
 const AmountModalInput = (props: AmountModalInputProps) => {
+    const { alert, showAlert } = useAlert();
     const [title, setTitle] = useState<string>("");
     const [amount, setAmount] = useState<string>("");
 
@@ -20,7 +23,16 @@ const AmountModalInput = (props: AmountModalInputProps) => {
     }
 
     const handleAccept = useCallback(() => {
-        props.onAccept(title, amount);
+        if (props.titlePlaceholder && !title.trim()) {
+            showAlert(props.titlePlaceholder + " वैध नहीं है", "error");
+            return;
+        }
+        const number = Number(amount);
+        if (!Number.isFinite(number) || number <= 0) {
+            showAlert(props.amountPlaceholder + " वैध नहीं है", "error");
+            return;
+        }
+        props.onAccept(title, number);
         clearInputs();
     }, [title, amount]);
 
@@ -32,13 +44,14 @@ const AmountModalInput = (props: AmountModalInputProps) => {
 
     return (
         <div className="modal-overlay">
+            <Alert alert={alert} />
             <div className="modal-content">
                 <h2>{props.header}</h2>
                 <div>
-                    <VoiceInput
+                    {props.titlePlaceholder && <VoiceInput
                         placeholder={props.titlePlaceholder}
                         value={title}
-                        onChange={setTitle} />
+                        onChange={setTitle} />}
                     <input
                         type="number"
                         placeholder={props.amountPlaceholder}
