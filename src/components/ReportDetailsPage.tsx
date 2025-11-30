@@ -49,7 +49,6 @@ const ReportDetailsPage = () => {
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-    const [sharedWith, setSharedWith] = useState(["test@gmail.com"]);
     const topupAmount = report.expenses.filter(e => !e.deleted && e.amount > 0).reduce((total, e) => total + e.amount, 0);
     const spentAmount = Math.abs(report.expenses.filter(e => !e.deleted && e.amount < 0).reduce((total, e) => total + e.amount, 0));
     const remainingBudget = report.budget + topupAmount - spentAmount;
