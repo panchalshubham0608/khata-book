@@ -1,5 +1,5 @@
 // ReportDetailsPage.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FiShare2, FiPlus, FiFileText } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { Link } from "react-router-dom";
@@ -9,11 +9,12 @@ import ReportHamburgerMenu from "./ReportHamburgerMenu";
 import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
-import type { Expense, Report } from "../firebase/types";
+import type { Report } from "../firebase/types";
 import { createExpense, getReport } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
+import { shared } from "../utils/reportUtils";
 
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
@@ -65,7 +66,7 @@ const ReportDetailsPage = () => {
         return () => unsubscribe();
     }, [reportId]);
 
-    const handleAddExpense = async (title: string, amount: number) => {
+    const createExpenseHelper = useCallback(async (title: string, amount: number, label: string) => {
         if (!reportId) {
             showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
             return;
@@ -76,8 +77,7 @@ const ReportDetailsPage = () => {
             await createExpense({
                 reportId,
                 expenseTitle: title,
-                // for expense, the amount should be negative
-                expenseAmount: -amount,
+                expenseAmount: amount,
             });
 
             // Refetch updated report
@@ -85,15 +85,17 @@ const ReportDetailsPage = () => {
             if (updated) setReport(updated);
 
             setOpenExpenseModal(false);
-            showAlert("खर्च सफलतापूर्वक जोड़ दिया गया", "success");
+            showAlert(`${label} सफलतापूर्वक जोड़ दिया गया`, "success");
         } catch (err) {
             console.error(err);
-            showAlert("खर्च जोड़ने में समस्या हुई", "error");
+            showAlert(`${label} जोड़ने में समस्या हुई`, "error");
         } finally {
             setLoading(false);
         }
-    };
+    }, [reportId, showAlert]);
 
+    const handleAddExpense = useCallback(async (title: string, amount: number) => await createExpenseHelper(title, -1 * Math.abs(amount), "खर्चा"), [createExpenseHelper]);
+    const handleTopup = useCallback(async (amount: number) => await createExpenseHelper("टॉप उप", Math.abs(amount), "टॉप उप"), [createExpenseHelper]);;
 
     const handleExpenseDoubleClick = (expenseId: string) => {
         console.log(expenseId);
@@ -132,11 +134,12 @@ const ReportDetailsPage = () => {
                 onDeleteReport={() => {
                     console.log("Report deleted!");
                 }}
+                onTopup={handleTopup}
             />
 
             <div className="report-header">
                 <h2 className="report-title">{report.title}</h2>
-                {report.shared && (
+                {shared(report) && (
                     <span className="shared-badge">
                         <FiShare2 size={16} /> साझा
                     </span>

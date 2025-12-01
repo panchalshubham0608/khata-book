@@ -9,6 +9,7 @@ interface ReportHamburgerMenuProps {
   onAddEmail?: (email: string) => void;
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
+  onTopup?: (amount: number) => void;
   labelManageAccess?: string;
   labelTopup?: string;
   labelDeleteReport?: string;
@@ -18,6 +19,7 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   onAddEmail,
   onRemoveEmail,
   onDeleteReport,
+  onTopup,
   labelManageAccess = "पहुँच नियंत्रण",
   labelTopup = "टॉप उप",
   labelDeleteReport = "रिपोर्ट हटाएँ",
@@ -58,9 +60,9 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
     setShowDeleteReportDialog(true);
   };
 
-  const handleTopup = (_: string, amount: number) => {
-    console.log("top up " + amount);
+  const handleTopup = async (_: string, amount: number) => {
     setShowTopupInput(false);
+    if (onTopup) await onTopup(amount);
   };
 
   return (
