@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FiShare2, FiPlus, FiFileText } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ConfirmDialog from "./ConfirmDialog";
 import AmountModalInput from "./AmountModalInput";
 import ReportHamburgerMenu from "./ReportHamburgerMenu";
@@ -10,7 +10,7 @@ import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
 import type { Report } from "../firebase/types";
-import { createExpense, deleteExpense, getReport, shareReport, unshareReport } from "../firebase/reportService";
+import { createExpense, deleteExpense, deleteReport, getReport, shareReport, unshareReport } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
@@ -20,6 +20,7 @@ import { type User } from "firebase/auth";
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
     const { alert, showAlert } = useAlert();
+    const navigate = useNavigate();
 
     const [user, setUser] = useState<User | null>(null);
     const [report, setReport] = useState<Report | null>(null);
@@ -152,7 +153,7 @@ const ReportDetailsPage = () => {
                 return;
             }
             if (!selectedExpenseId) {
-                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                showAlert("खर्चे की आईडी उपलब्ध नहीं है", "error");
                 return;
 
             }
@@ -168,7 +169,7 @@ const ReportDetailsPage = () => {
             showAlert("खर्चा सफलता पूर्वक हटाया गया", "success");
         } catch (err) {
             console.log(err);
-            showAlert("खर्चा हटाने में समस्या हुई ", "error");
+            showAlert("खर्चा हटाने में समस्या हुई", "error");
         } finally {
             setShowDeleteExpenseDialog(false);
             setSelectedExpenseId(null);
@@ -176,7 +177,23 @@ const ReportDetailsPage = () => {
         }
     }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, deleteExpense, setShowDeleteExpenseDialog]);;
 
-    const handleDeleteReport = async () => { };
+    const handleDeleteReport = async () => {
+        try {
+            if (!reportId) {
+                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                return;
+            }
+
+            setLoading(true);
+            await deleteReport(reportId);
+            navigate("/reports");
+        } catch (err) {
+            console.log(err);
+            showAlert("रिपोर्ट हटाने में समस्या हुई", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!report) return <Loader visible={true} />;
 

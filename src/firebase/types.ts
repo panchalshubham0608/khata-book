@@ -14,4 +14,5 @@ export interface Report {
     createdAt: string;     // ISO timestamp
     sharedWith: string[];  // List of emails with access
     expenses: Expense[];   // All expenses inside this report
+    deleted: boolean;      // Soft delete flag
 }

@@ -93,131 +93,6 @@ export async function deleteExpense(reportId: string, expenseId: string) {
   await updateDoc(expenseRef, { deleted: true });
 }
 
-// export async function getReports(email: string): Promise<Report[]> {
-//   const reportsRef = collection(db, "reports");
-
-//   const sharedQ = query(
-//     reportsRef,
-//     where("sharedWith", "array-contains", email)
-//   );
-
-//   const ownerQ = query(
-//     reportsRef,
-//     where("owner", "==", email)
-//   );
-
-//   const [sharedSnap, ownerSnap] = await Promise.all([
-//     getDocs(sharedQ),
-//     getDocs(ownerQ),
-//   ]);
-
-//   const shared = sharedSnap.docs.map((d) => ({
-//     ...(d.data() as Report),
-//     id: d.id,
-//   }));
-
-//   const owned = ownerSnap.docs.map((d) => ({
-//     ...(d.data() as Report),
-//     id: d.id,
-//   }));
-
-//   // merge & dedupe (in case a user appears in both)
-//   const all = [...owned, ...shared];
-
-//   const unique = Object.values(
-//     all.reduce((acc, report) => {
-//       acc[report.id] = report;
-//       return acc;
-//     }, {} as Record<string, Report>)
-//   );
-
-//   return unique;
-// }
-
-// export async function getReports(email: string): Promise<Report[]> {
-//   const reportsRef = collection(db, "reports");
-
-//   // Query: reports where user is owner
-//   const ownerQ = query(
-//     reportsRef,
-//     where("owner", "==", email)
-//   );
-
-//   // Query: reports shared with the user
-//   const sharedQ = query(
-//     reportsRef,
-//     where("sharedWith", "array-contains", email)
-//   );
-
-//   const [ownerSnap, sharedSnap] = await Promise.all([
-//     getDocs(ownerQ),
-//     getDocs(sharedQ),
-//   ]);
-
-//   const baseReports = [...ownerSnap.docs, ...sharedSnap.docs].map((d) => ({
-//     ...(d.data() as Report),
-//     id: d.id,
-//   }));
-
-//   // Deduplicate
-//   const uniqueReports = Object.values(
-//     baseReports.reduce((acc, r) => {
-//       acc[r.id] = r;
-//       return acc;
-//     }, {} as Record<string, Report>)
-//   );
-
-//   // Now fetch expenses for each report
-//   const reportsWithExpenses = await Promise.all(
-//     uniqueReports.map(async (report) => {
-//       const expensesRef = collection(db, "reports", report.id, "expenses");
-//       const expensesSnap = await getDocs(expensesRef);
-
-//       const expenses = expensesSnap.docs.map((d) => ({
-//         ...(d.data() as Expense),
-//         id: d.id,
-//       }))
-
-//       // Reverse sort by createdAt
-//     .sort((e1, e2) => e2.date.localeCompare(e1.date));
-
-//       return {
-//         ...report,
-//         expenses,
-//       };
-//     })
-//   );
-
-//   return reportsWithExpenses;
-// }
-
-// export async function getReport(reportId: string): Promise<Report | null> {
-//   const reportRef = doc(db, "reports", reportId);
-//   const reportSnap = await getDoc(reportRef);
-
-//   if (!reportSnap.exists()) return null;
-
-//   // Cast Firestore data to Report (without expenses)
-//   const baseReport = reportSnap.data() as Omit<Report, "id" | "expenses">;
-
-//   // Fetch subcollection expenses
-//   const expensesRef = collection(db, "reports", reportId, "expenses");
-//   const expensesSnap = await getDocs(expensesRef);
-
-//   const expenses: Expense[] = expensesSnap.docs.map((d) => ({
-//     ...(d.data() as Expense),
-//     id: d.id,
-//   }))
-//     .sort((e1, e2) => e2.date.localeCompare(e1.date));
-
-//   // Return full report
-//   return {
-//     id: reportId,
-//     ...baseReport,
-//     expenses,
-//   };
-// }
-
 async function attachExpenses(report: Report): Promise<Report> {
   const expensesRef = collection(db, "reports", report.id, "expenses");
   const expensesSnap = await getDocs(expensesRef);
@@ -250,6 +125,7 @@ export async function getReports(email: string): Promise<Report[]> {
     ...(d.data() as Report),
     id: d.id,
   }))
+    .filter(report => !report.deleted)
     .sort((r1, r2) => Date.parse(r2.createdAt) - Date.parse(r1.createdAt));
 
   // Dedupe
@@ -273,6 +149,8 @@ export async function getReport(reportId: string): Promise<Report | null> {
     ...(reportSnap.data() as Omit<Report, "id" | "expenses">),
     expenses: [],
   };
+
+  if (baseReport.deleted) return null;
 
   return await attachExpenses(baseReport);
 }
