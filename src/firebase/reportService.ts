@@ -30,6 +30,7 @@ export async function createReport(options: CreateReportOptions): Promise<Report
     sharedWith: [],
     expenses: [],
     createdAt: new Date().toISOString(),
+    deleted: false,
   };
 
   const reportRef = await addDoc(collection(db, "reports"), reportData);
