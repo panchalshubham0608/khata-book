@@ -62,10 +62,26 @@ export async function unshareReport(reportId: string, email: string) {
   });
 }
 
-export async function createExpense(reportId: string, expense: Expense) {
+interface CreateExpenseOptions {
+  reportId: string;
+  expenseTitle: string;
+  expenseAmount: number; // positive = topup, negative = debit
+}
+
+export async function createExpense(options: CreateExpenseOptions) {
+  const { reportId, expenseTitle, expenseAmount } = options;
+
   const expensesRef = collection(db, "reports", reportId, "expenses");
+
+  const expenseData: Omit<Expense, "id"> = {
+    title: expenseTitle,
+    amount: expenseAmount,
+    date: new Date().toISOString(),
+    deleted: false,
+  };
+
   const expenseRef = await addDoc(expensesRef, {
-    ...expense,
+    ...expenseData,
     createdAt: Date.now(),
   });
 
@@ -134,7 +150,8 @@ export async function getReport(reportId: string): Promise<Report | null> {
   const expenses: Expense[] = expensesSnap.docs.map((d) => ({
     ...(d.data() as Expense),
     id: d.id,
-  }));
+  }))
+    .sort((e1, e2) => e2.date.localeCompare(e1.date));
 
   // Return full report
   return {

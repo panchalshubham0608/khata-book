@@ -1,73 +1,97 @@
 // ReportDetailsPage.tsx
-import { useState } from "react";
-import { FiShare2, FiPlus } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { FiShare2, FiPlus, FiFileText } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import ConfirmDialog from "./ConfirmDialog";
 import AmountModalInput from "./AmountModalInput";
 import ReportHamburgerMenu from "./ReportHamburgerMenu";
 import "./ReportDetailsPage.css";
-
-interface Expense {
-    id: string;
-    title: string;
-    amount: number;
-    date: string; // ISO string
-    deleted: boolean
-}
-
-interface Report {
-    id: string;
-    title: string;
-    budget: number;
-    shared: boolean;
-    createdAt: string; // ISO string
-    owner: string;     // e.g., "शुभम"
-    expenses: Expense[];
-}
-
-
-const sampleReport: Report = {
-    id: "1",
-    title: "मासिक खर्च",
-    budget: 15000,
-    shared: true,
-    createdAt: "2025-11-28T10:00:00.000Z",
-    owner: "शुभम",
-    expenses: [
-        { id: "e1", title: "सब्ज़ियाँ", amount: -1500, date: "2025-11-01", deleted: false },
-        { id: "e2", title: "दवा", amount: -1200, date: "2025-11-03", deleted: true },
-        { id: "e3", title: "टॉप उप", amount: 500, date: "2025-11-10", deleted: false },
-        { id: "e3", title: "पेट्रोल", amount: -3000, date: "2025-11-10", deleted: false },
-    ],
-};
-
+import { useParams } from "react-router-dom";
+import { auth } from "../firebase/firebase";
+import type { Expense, Report } from "../firebase/types";
+import { createExpense, getReport } from "../firebase/reportService";
+import { useAlert } from "../hooks/useAlert";
+import Alert from "./Alert";
+import Loader from "./Loader";
 
 const ReportDetailsPage = () => {
-    const [report, setReport] = useState<Report>(sampleReport);
+    const { reportId } = useParams();
+    const [report, setReport] = useState<Report | null>(null);
+    const [loading, setLoading] = useState(true);
+    const { alert, showAlert } = useAlert();
 
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-    const topupAmount = report.expenses.filter(e => !e.deleted && e.amount > 0).reduce((total, e) => total + e.amount, 0);
-    const spentAmount = Math.abs(report.expenses.filter(e => !e.deleted && e.amount < 0).reduce((total, e) => total + e.amount, 0));
-    const remainingBudget = report.budget + topupAmount - spentAmount;
 
-    const handleAddExpense = (title: string, amount: number) => {
-        const newExp = {
-            id: Date.now().toString(), title, amount, date: Date.now().toString(), deleted: false
-        };
+    useEffect(() => {
+        if (!reportId) return;
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            if (!user?.email) {
+                setReport(null);
+                setLoading(false);
+                return;
+            }
 
-        // TODO: Add to your backend or local state
-        console.log("New Expense →", newExp);
-        setOpenExpenseModal(false);
-        setReport({
-            ...report,
-            expenses: [
-                newExp,
-                ...report.expenses,
-            ]
+            try {
+                setLoading(true);
+                const fetched = await getReport(reportId);
+
+                if (!fetched) {
+                    showAlert("रिपोर्ट नहीं मिली", "error");
+                    setReport(null);
+                    return;
+                }
+
+                if (
+                    fetched.owner !== user.email &&
+                    !fetched.sharedWith?.includes(user.email)
+                ) {
+                    showAlert("आपको इस रिपोर्ट को देखने की अनुमति नहीं है", "error");
+                    setReport(null);
+                    return;
+                }
+
+                setReport(fetched);
+            } catch (error) {
+                console.error(error);
+                showAlert("रिपोर्ट लाने में समस्या हुई", "error");
+            } finally {
+                setLoading(false);
+            }
         });
+
+        return () => unsubscribe();
+    }, [reportId]);
+
+    const handleAddExpense = async (title: string, amount: number) => {
+        if (!reportId) {
+            showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await createExpense({
+                reportId,
+                expenseTitle: title,
+                // for expense, the amount should be negative
+                expenseAmount: -amount,
+            });
+
+            // Refetch updated report
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+
+            setOpenExpenseModal(false);
+            showAlert("खर्च सफलतापूर्वक जोड़ दिया गया", "success");
+        } catch (err) {
+            console.error(err);
+            showAlert("खर्च जोड़ने में समस्या हुई", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -78,20 +102,28 @@ const ReportDetailsPage = () => {
     };
 
     const deleteExpense = () => {
-        if (!selectedExpenseId) return;
-        setShowDeleteExpenseDialog(false);
-        setSelectedExpenseId(null);
-        let expenseIdx = report.expenses.findIndex(report => report.id === selectedExpenseId);
-        if (expenseIdx !== -1) {
-            setReport({
-                ...report,
-                expenses: report.expenses.splice(expenseIdx, 1)
-            });
-        }
+        // if (!selectedExpenseId) return;
+        // setShowDeleteExpenseDialog(false);
+        // setSelectedExpenseId(null);
+        // let expenseIdx = report.expenses.findIndex(report => report.id === selectedExpenseId);
+        // if (expenseIdx !== -1) {
+        //     setReport({
+        //         ...report,
+        //         expenses: report.expenses.splice(expenseIdx, 1)
+        //     });
+        // }
     };
+
+    if (!report) return <Loader visible={true} />;
+
+    const topupAmount = report.expenses.filter(e => !e.deleted && e.amount > 0).reduce((total, e) => total + e.amount, 0);
+    const spentAmount = Math.abs(report.expenses.filter(e => !e.deleted && e.amount < 0).reduce((total, e) => total + e.amount, 0));
+    const remainingBudget = report.budget + topupAmount - spentAmount;
 
     return (
         <div className="report-details-container">
+            <Alert alert={alert} />
+            <Loader visible={loading} />
             <Link to="/reports" className="back-button">
                 <FiArrowLeft size={20} />
                 <span>वापस जाएँ</span>
@@ -140,6 +172,13 @@ const ReportDetailsPage = () => {
                         <p className={`expense-amount ${expense.amount < 0 ? 'debit' : 'credit'}`}>₹ {Math.abs(expense.amount).toLocaleString()}</p>
                     </div>
                 ))}
+                {report.expenses.length === 0 &&
+                    <div className="no-reports-container">
+                        <FiFileText size={48} className="no-reports-icon" />
+                        <p className="no-reports-text">अभी कोई खर्चा नहीं जोड़ा गया</p>
+                        <p className="no-reports-subtext">नया खर्चा जोड़ने के लिए नीचे का बटन दबाएँ</p>
+                    </div>}
+
             </div>
 
             <button
