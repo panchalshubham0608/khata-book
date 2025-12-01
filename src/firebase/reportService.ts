@@ -125,7 +125,7 @@ export async function getReports(email: string): Promise<Report[]> {
     ...(d.data() as Report),
     id: d.id,
   }))
-    .filter(report => !report.deleted)
+  .filter(report => !report.deleted)
     .sort((r1, r2) => Date.parse(r2.createdAt) - Date.parse(r1.createdAt));
 
   // Dedupe
