@@ -71,6 +71,10 @@ const ReportDetailsPage = () => {
     }, [reportId]);
 
     const createExpenseHelper = useCallback(async (title: string, amount: number, label: string) => {
+        if (!user || !user.email || !user.displayName) {
+            showAlert("खर्चे के मालिक की जानकारी नहीं है", "error");
+            return;
+        }
         if (!reportId) {
             showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
             return;
@@ -82,6 +86,8 @@ const ReportDetailsPage = () => {
                 reportId,
                 expenseTitle: title,
                 expenseAmount: amount,
+                authorEmail: user.email,
+                authorDisplayName: user.displayName
             });
 
             // Refetch updated report
@@ -96,7 +102,7 @@ const ReportDetailsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [reportId, showAlert]);
+    }, [reportId, showAlert, user]);
 
     const handleAddExpense = useCallback(async (title: string, amount: number) => await createExpenseHelper(title, -1 * Math.abs(amount), "खर्चा"), [createExpenseHelper]);
     const handleTopup = useCallback(async (amount: number) => await createExpenseHelper("टॉप उप", Math.abs(amount), "टॉप उप"), [createExpenseHelper]);;
@@ -252,6 +258,7 @@ const ReportDetailsPage = () => {
                         <div className="expense-info">
                             <p className="expense-title">{expense.title}</p>
                             <p className="expense-date">{new Date(expense.date).toLocaleDateString("hi-IN")}</p>
+                            {expense.authorDisplayName && <p className="expense-author">{expense.authorDisplayName}</p>}
                         </div>
                         <p className={`expense-amount ${expense.amount < 0 ? 'debit' : 'credit'}`}>₹ {Math.abs(expense.amount).toLocaleString()}</p>
                     </div>

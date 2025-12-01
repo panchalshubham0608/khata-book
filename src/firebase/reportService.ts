@@ -67,10 +67,12 @@ interface CreateExpenseOptions {
   reportId: string;
   expenseTitle: string;
   expenseAmount: number; // positive = topup, negative = debit
+  authorEmail: string;
+  authorDisplayName: string;
 }
 
 export async function createExpense(options: CreateExpenseOptions) {
-  const { reportId, expenseTitle, expenseAmount } = options;
+  const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName } = options;
 
   const expensesRef = collection(db, "reports", reportId, "expenses");
 
@@ -78,7 +80,9 @@ export async function createExpense(options: CreateExpenseOptions) {
     title: expenseTitle,
     amount: expenseAmount,
     date: new Date().toISOString(),
-    deleted: false,
+    createdAt: new Date().toISOString(),
+    authorEmail,
+    authorDisplayName,
   };
 
   const expenseRef = await addDoc(expensesRef, {
@@ -91,7 +95,7 @@ export async function createExpense(options: CreateExpenseOptions) {
 
 export async function deleteExpense(reportId: string, expenseId: string) {
   const expenseRef = doc(db, "reports", reportId, "expenses", expenseId);
-  await updateDoc(expenseRef, { deleted: true });
+  await updateDoc(expenseRef, { deleted: true, deletedAt: new Date().toISOString() });
 }
 
 async function attachExpenses(report: Report): Promise<Report> {
@@ -126,7 +130,7 @@ export async function getReports(email: string): Promise<Report[]> {
     ...(d.data() as Report),
     id: d.id,
   }))
-  .filter(report => !report.deleted)
+    .filter(report => !report.deleted)
     .sort((r1, r2) => Date.parse(r2.createdAt) - Date.parse(r1.createdAt));
 
   // Dedupe

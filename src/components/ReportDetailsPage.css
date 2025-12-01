@@ -95,6 +95,14 @@
     font-size: 20px;
 }
 
+.expense-author {
+    font-size: 12px;
+    color: #777;
+    margin-left: 2px;
+    margin: 0;
+    margin-bottom: 5px;
+}
+
 .expense-details {
     display: flex;
     justify-content: space-between;
