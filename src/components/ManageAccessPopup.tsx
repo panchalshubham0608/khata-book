@@ -20,7 +20,6 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
     const [showRemoveEmail, setShowRemoveEmail] = useState<boolean>(false);
 
     const handleAdd = () => {
-        if (!email.trim()) return;
         onAddEmail(email.trim());
         setEmail("");
     };

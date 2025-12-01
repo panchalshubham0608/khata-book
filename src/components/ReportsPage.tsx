@@ -10,7 +10,7 @@ import { createReport, getReports } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { shared, spentAmount, topupAmount } from "../utils/reportUtils";
+import { isShared, spentAmount, topupAmount } from "../utils/reportUtils";
 
 const ReportsPage = () => {
     const navigate = useNavigate();
@@ -111,7 +111,7 @@ const ReportsPage = () => {
                                 <div className="report-header">
                                     <h3 className="report-title">{report.title}</h3>
 
-                                    {shared(report) && (
+                                    {isShared(report, user?.email) && (
                                         <span className="shared-badge">
                                             <FiShare2 size={14} /> साझा
                                         </span>

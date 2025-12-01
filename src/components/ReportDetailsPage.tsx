@@ -10,18 +10,20 @@ import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
 import type { Report } from "../firebase/types";
-import { createExpense, getReport } from "../firebase/reportService";
+import { createExpense, getReport, shareReport, unshareReport } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { shared } from "../utils/reportUtils";
+import { isShared, isOwner } from "../utils/reportUtils";
+import { type User } from "firebase/auth";
 
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
-    const [report, setReport] = useState<Report | null>(null);
-    const [loading, setLoading] = useState(true);
     const { alert, showAlert } = useAlert();
 
+    const [user, setUser] = useState<User | null>(null);
+    const [report, setReport] = useState<Report | null>(null);
+    const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
@@ -29,6 +31,7 @@ const ReportDetailsPage = () => {
     useEffect(() => {
         if (!reportId) return;
         const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            if (user) setUser(user);
             if (!user?.email) {
                 setReport(null);
                 setLoading(false);
@@ -103,7 +106,47 @@ const ReportDetailsPage = () => {
         setShowDeleteExpenseDialog(true);
     };
 
-    const deleteExpense = () => {
+    // Utility method for adding/removing emails
+    const manageEmailShare = useCallback(async (
+        email: string,
+        action: "add" | "remove",
+        successLabel: string
+    ) => {
+        if (!reportId) {
+            showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+            return;
+        }
+
+        if (!email || !email.includes("@")) {
+            showAlert("कृपया एक मान्य ईमेल दर्ज करें", "error");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            if (action === "add") await shareReport(reportId, email);
+            else await unshareReport(reportId, email);
+
+            // Refresh report
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+
+            showAlert(`${successLabel} सफलतापूर्वक हो गया`, "success");
+        } catch (err) {
+            console.error(err);
+            showAlert(`ईमेल ${successLabel.toLowerCase()} में समस्या हुई`, "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, showAlert, getReport, shareReport, unshareReport]);
+
+    const handleAddEmail = useCallback(async (email: string) =>
+        await manageEmailShare(email, "add", "शेयर"), [manageEmailShare]);
+    const handleRemoveEmail = useCallback(async (email: string) =>
+        await manageEmailShare(email, "remove", "अनशेयर"), [manageEmailShare]);
+
+
+    const deleteExpense = async () => {
         // if (!selectedExpenseId) return;
         // setShowDeleteExpenseDialog(false);
         // setSelectedExpenseId(null);
@@ -115,6 +158,7 @@ const ReportDetailsPage = () => {
         //     });
         // }
     };
+    const handleDeleteReport = async () => { };
 
     if (!report) return <Loader visible={true} />;
 
@@ -130,16 +174,18 @@ const ReportDetailsPage = () => {
                 <FiArrowLeft size={20} />
                 <span>वापस जाएँ</span>
             </Link>
-            <ReportHamburgerMenu
-                onDeleteReport={() => {
-                    console.log("Report deleted!");
-                }}
-                onTopup={handleTopup}
-            />
+            {isOwner(report, user?.email) &&
+                <ReportHamburgerMenu
+                    sharedWith={report.sharedWith}
+                    onAddEmail={handleAddEmail}
+                    onRemoveEmail={handleRemoveEmail}
+                    onDeleteReport={handleDeleteReport}
+                    onTopup={handleTopup}
+                />}
 
             <div className="report-header">
                 <h2 className="report-title">{report.title}</h2>
-                {shared(report) && (
+                {isShared(report, user?.email) && (
                     <span className="shared-badge">
                         <FiShare2 size={16} /> साझा
                     </span>

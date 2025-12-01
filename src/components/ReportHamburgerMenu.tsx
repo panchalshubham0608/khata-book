@@ -6,6 +6,7 @@ import "./ReportHamburgerMenu.css";
 import AmountModalInput from "./AmountModalInput";
 
 interface ReportHamburgerMenuProps {
+  sharedWith: string[],
   onAddEmail?: (email: string) => void;
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
@@ -16,6 +17,7 @@ interface ReportHamburgerMenuProps {
 }
 
 const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
+  sharedWith,
   onAddEmail,
   onRemoveEmail,
   onDeleteReport,
@@ -122,14 +124,12 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
       />}
 
       {showAccessPopup && <ManageAccessPopup
-        sharedWith={["user1@gmail.com"]}
+        sharedWith={sharedWith}
         onAddEmail={(email) => {
-          console.log("Adding " + email);
           setShowAccessPopup(false);
           onAddEmail?.(email);
         }}
         onRemoveEmail={(email) => {
-          console.log("Removing " + email);
           setShowAccessPopup(false);
           onRemoveEmail?.(email);
         }}
