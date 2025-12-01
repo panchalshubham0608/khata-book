@@ -10,7 +10,7 @@ import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
 import type { Report } from "../firebase/types";
-import { createExpense, getReport, shareReport, unshareReport } from "../firebase/reportService";
+import { createExpense, deleteExpense, getReport, shareReport, unshareReport } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
@@ -101,7 +101,6 @@ const ReportDetailsPage = () => {
     const handleTopup = useCallback(async (amount: number) => await createExpenseHelper("टॉप उप", Math.abs(amount), "टॉप उप"), [createExpenseHelper]);;
 
     const handleExpenseDoubleClick = (expenseId: string) => {
-        console.log(expenseId);
         setSelectedExpenseId(expenseId);
         setShowDeleteExpenseDialog(true);
     };
@@ -146,18 +145,37 @@ const ReportDetailsPage = () => {
         await manageEmailShare(email, "remove", "अनशेयर"), [manageEmailShare]);
 
 
-    const deleteExpense = async () => {
-        // if (!selectedExpenseId) return;
-        // setShowDeleteExpenseDialog(false);
-        // setSelectedExpenseId(null);
-        // let expenseIdx = report.expenses.findIndex(report => report.id === selectedExpenseId);
-        // if (expenseIdx !== -1) {
-        //     setReport({
-        //         ...report,
-        //         expenses: report.expenses.splice(expenseIdx, 1)
-        //     });
-        // }
-    };
+    const handleDeleteExpense = useCallback(async () => {
+        try {
+            if (!reportId) {
+                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                return;
+            }
+            if (!selectedExpenseId) {
+                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                return;
+
+            }
+
+            // Delete expense
+            setLoading(true);
+            await deleteExpense(reportId, selectedExpenseId);
+
+            // Refresh report
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+
+            showAlert("खर्चा सफलता पूर्वक हटाया गया", "success");
+        } catch (err) {
+            console.log(err);
+            showAlert("खर्चा हटाने में समस्या हुई ", "error");
+        } finally {
+            setShowDeleteExpenseDialog(false);
+            setSelectedExpenseId(null);
+            setLoading(false);
+        }
+    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, deleteExpense, setShowDeleteExpenseDialog]);;
+
     const handleDeleteReport = async () => { };
 
     if (!report) return <Loader visible={true} />;
@@ -253,7 +271,7 @@ const ReportDetailsPage = () => {
                 message="यह खर्च स्थायी रूप से हट जाएगा।"
                 confirmText="हटाएँ"
                 cancelText="रद्द करें"
-                onConfirm={deleteExpense}
+                onConfirm={handleDeleteExpense}
                 onCancel={() => setShowDeleteExpenseDialog(false)}
             />
 
