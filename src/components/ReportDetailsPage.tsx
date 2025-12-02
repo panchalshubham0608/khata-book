@@ -5,7 +5,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import ConfirmDialog from "./ConfirmDialog";
 import AmountModalInput from "./AmountModalInput";
-import ReportHamburgerMenu from "./ReportHamburgerMenu";
+import ReportHamburgerMenu from "./ReportDetailsHamburger";
 import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
