@@ -9,8 +9,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        "name": "खाता बुक",
-        "short_name": "खाता",
+        "name": "Khata-Book",
+        "short_name": "Khata-Book",
         "description": "साफ़-सुथरे और आसान इंटरफ़ेस के साथ अपने दैनिक खर्चों को आसानी से ट्रैक करें।",
         "start_url": "/khata-book/",
         "display": "standalone",
