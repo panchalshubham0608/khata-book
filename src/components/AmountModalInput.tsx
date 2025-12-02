@@ -3,6 +3,7 @@ import "./AmountModalInput.css";
 import { useState, useCallback } from "react";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
+import { parseHindiExpense } from "../utils/voiceInputUtils";
 
 interface AmountModalInputProps {
     header: string;
@@ -20,6 +21,16 @@ const AmountModalInput = (props: AmountModalInputProps) => {
     const clearInputs = () => {
         setTitle("");
         setAmount("");
+    }
+
+    const handleVoiceInput = (value: string) => {
+        const parsed = parseHindiExpense(value);
+        if (parsed) {
+            setTitle(parsed.title);
+            setAmount(parsed.amount.toString());
+        } else {
+            setTitle(value);
+        }
     }
 
     const handleAccept = useCallback(() => {
@@ -51,7 +62,7 @@ const AmountModalInput = (props: AmountModalInputProps) => {
                     {props.titlePlaceholder && <VoiceInput
                         placeholder={props.titlePlaceholder}
                         value={title}
-                        onChange={setTitle} />}
+                        onChange={handleVoiceInput} />}
                     <input
                         type="number"
                         placeholder={props.amountPlaceholder}
