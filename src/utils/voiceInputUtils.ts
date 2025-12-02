@@ -3,7 +3,7 @@ export function parseHindiExpense(input: string): { title: string, amount: numbe
     const text = input.trim().replace(/\s+/g, " ");
 
     const regex =
-        /(.+?)\s*(?:के|का|की)\s*(?:₹\s*)?(\d+)\s*(?:रुपये|रुपया|rs|रु)?/i;
+        /(.+?)\s*(?:के|का|की)\s*(?:₹\s*)?(\d+)\s*(?:रुपए|रुपये|रुपया|rs|रु)?/i;
 
     const match = text.match(regex);
 
