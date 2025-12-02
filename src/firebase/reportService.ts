@@ -115,7 +115,11 @@ async function attachExpenses(report: Report): Promise<Report> {
   };
 }
 
-export async function getReports(email: string): Promise<Report[]> {
+interface GetReportsOptions {
+  showDeleted?: boolean
+}
+
+export async function getReports(email: string, options: GetReportsOptions): Promise<Report[]> {
   const reportsRef = collection(db, "reports");
 
   const ownerQ = query(reportsRef, where("owner", "==", email));
@@ -126,12 +130,20 @@ export async function getReports(email: string): Promise<Report[]> {
     getDocs(sharedQ),
   ]);
 
-  const baseReports = [...ownerSnap.docs, ...sharedSnap.docs].map((d) => ({
+  const reports = [...ownerSnap.docs, ...sharedSnap.docs].map((d) => ({
     ...(d.data() as Report),
     id: d.id,
   }))
-    .filter(report => !report.deleted)
     .sort((r1, r2) => Date.parse(r2.createdAt) - Date.parse(r1.createdAt));
+
+  let baseReports = reports.filter(report => !report.deleted);
+  if (options.showDeleted) {
+    const deletedReports = reports.filter(report => report.deleted);
+    baseReports = [
+      ...baseReports,
+      ...deletedReports
+    ];
+  }
 
   // Dedupe
   const uniqueReports = Object.values(
@@ -154,8 +166,6 @@ export async function getReport(reportId: string): Promise<Report | null> {
     ...(reportSnap.data() as Omit<Report, "id" | "expenses">),
     expenses: [],
   };
-
-  if (baseReport.deleted) return null;
 
   return await attachExpenses(baseReport);
 }

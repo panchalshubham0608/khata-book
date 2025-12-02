@@ -14,7 +14,7 @@ import { createExpense, deleteExpense, deleteReport, getReport, shareReport, uns
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, isOwner } from "../utils/reportUtils";
+import { isShared, isOwner, getRemainingDays } from "../utils/reportUtils";
 import { type User } from "firebase/auth";
 
 const ReportDetailsPage = () => {
@@ -215,7 +215,7 @@ const ReportDetailsPage = () => {
                 <FiArrowLeft size={20} />
                 <span>वापस जाएँ</span>
             </Link>
-            {isOwner(report, user?.email) &&
+            {isOwner(report, user?.email) && !report.deleted &&
                 <ReportHamburgerMenu
                     sharedWith={report.sharedWith}
                     onAddEmail={handleAddEmail}
@@ -223,6 +223,9 @@ const ReportDetailsPage = () => {
                     onDeleteReport={handleDeleteReport}
                     onTopup={handleTopup}
                 />}
+
+            {report.deletedAt && <p className="deleted-message">
+                यह रिपोर्ट सॉफ्ट-डिलीटेड है और {getRemainingDays(report.deletedAt)} दिन में स्थायी रूप से हट जाएगी।</p>}
 
             <div className="report-header">
                 <h2 className="report-title">{report.title}</h2>
@@ -272,12 +275,12 @@ const ReportDetailsPage = () => {
 
             </div>
 
-            <button
+            {!report.deleted && <button
                 className="add-expense-btn"
                 onClick={() => setOpenExpenseModal(true)}
             >
                 <FiPlus size={22} />
-            </button>
+            </button>}
 
             {openExpenseModal &&
                 <AmountModalInput

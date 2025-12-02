@@ -166,6 +166,15 @@
     color: #8e24aa;
 }
 
+.deleted-message {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 16px;
+    margin: 8px 0;
+}
 
 /* Floating Add Button */
 .add-expense-btn {

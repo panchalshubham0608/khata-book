@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { FiShare2, FiPlus, FiUsers, FiLogOut, FiFileText } from "react-icons/fi";
+import { useState, useEffect, useCallback } from "react";
+import { FiShare2, FiPlus, FiUsers, FiFileText } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
 import { signOut, type User } from "firebase/auth";
@@ -11,6 +11,7 @@ import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
 import { isShared, spentAmount, topupAmount } from "../utils/reportUtils";
+import ReportsHamburger from "./ReportsHamburger";
 
 const ReportsPage = () => {
     const navigate = useNavigate();
@@ -18,12 +19,16 @@ const ReportsPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [showDeleted, setShowDeleted] = useState<boolean>(() => {
+        const stored = localStorage.getItem("showDeleted");
+        return stored === "true"; // converts string "true" to boolean true, everything else is false
+    });
     const { alert, showAlert } = useAlert();
 
-    const fetchReports = async (email: string) => {
+    const fetchReports = useCallback(async (email: string) => {
         try {
             setLoading(true);
-            const userReports = await getReports(email);
+            const userReports = await getReports(email, { showDeleted });
             setReports(userReports);
         } catch (err) {
             console.error(err);
@@ -31,7 +36,7 @@ const ReportsPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [setLoading, getReports, setReports, showAlert, showDeleted]);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -46,6 +51,19 @@ const ReportsPage = () => {
 
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (user?.email) fetchReports(user.email);
+    }, [user, fetchReports]);
+
+    const toggleShowDeleted = () => {
+        setShowDeleted((prev) => {
+            const next = !prev;
+            localStorage.setItem("showDeleted", next.toString());
+            return next;
+        });
+    };
+
 
     const handleAddReport = async (title: string, amount: number) => {
         try {
@@ -81,6 +99,11 @@ const ReportsPage = () => {
         <div className="reports-container">
             <Alert alert={alert} />
             <Loader visible={loading} />
+            <ReportsHamburger
+                showDeleted={showDeleted}
+                toggleShowDeleted={toggleShowDeleted}
+                handleLogout={handleLogout}
+            />
             <div className="reports-topbar">
                 {user?.photoURL && user?.displayName ?
                     <span className="reports-profile">
@@ -88,9 +111,6 @@ const ReportsPage = () => {
                     </span>
                     :
                     <FiUsers className="reports-profile-icon" />}
-                <button className="reports-logout-btn" onClick={handleLogout}>
-                    <FiLogOut />
-                </button>
             </div>
 
             <h2 className="reports-title">आपके खर्चे की सूचि</h2>
@@ -107,7 +127,7 @@ const ReportsPage = () => {
                         }
 
                         return (
-                            <div className="report-card" key={report.id} onClick={() => navigate(`/reports/${report.id}`)}>
+                            <div className={`report-card ${report.deleted && "report-deleted"}`} key={report.id} onClick={() => navigate(`/reports/${report.id}`)}>
                                 <div className="report-header">
                                     <h3 className="report-title">{report.title}</h3>
 
