@@ -16,6 +16,7 @@ import Loader from "./Loader";
 import { isShared, isOwner, getRemainingDays, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
 import { type User } from "firebase/auth";
 import EditExpense from "./EditExpense";
+import ExpenseRow from "./ExpenseRow";
 
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
@@ -274,25 +275,17 @@ const ReportDetailsPage = () => {
             <div className="expenses-title">
                 खर्चों की सूची
                 {canActOnExpense && <div className="expense-note">
-                    (खर्चे में बदलाव करने के लिए दो बार खर्चे पर दबाएँ)
+                    (खर्चे में बदलाव करने के लिए खर्च पर लंबे समय तक दबाएँ)
                 </div>}
             </div>
 
             <div className="expenses-list">
                 {report.expenses.map((expense) => (
-                    <div className={`expense-item ${expense.deleted && "deleted"}`} key={expense.id}
-                        onDoubleClick={() => {
-                            if (canActOnExpense && !expense.deleted) {
-                                setSelectedExpenseId(expense.id);
-                            }
-                        }}>
-                        <div className="expense-info">
-                            <p className="expense-title">{expense.title}</p>
-                            <p className="expense-date">{new Date(expense.date).toLocaleDateString("hi-IN")}</p>
-                            {expense.authorDisplayName && <p className="expense-author">{expense.authorDisplayName}</p>}
-                        </div>
-                        <p className={`expense-amount ${expense.amount < 0 ? 'debit' : 'credit'}`}>₹ {Math.abs(expense.amount).toLocaleString()}</p>
-                    </div>
+                    <ExpenseRow key={expense.id} expense={expense} onAction={() => {
+                        if (canActOnExpense && !expense.deleted) {
+                            setSelectedExpenseId(expense.id)
+                        }
+                    }} />
                 ))}
                 {report.expenses.length === 0 &&
                     <div className="no-reports-container">

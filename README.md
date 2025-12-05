@@ -57,8 +57,7 @@ cd khata-book-webapp
 npm install
 ```
 
-3. Set up Firebase environment
-Create .env:
+3. Set up Firebase environment - create .env:
 ```env
 VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=...
