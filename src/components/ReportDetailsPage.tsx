@@ -3,19 +3,19 @@ import { useState, useEffect, useCallback } from "react";
 import { FiShare2, FiPlus, FiFileText } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import ConfirmDialog from "./ConfirmDialog";
 import AmountModalInput from "./AmountModalInput";
 import ReportHamburgerMenu from "./ReportDetailsHamburger";
 import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
 import type { Report } from "../firebase/types";
-import { createExpense, deleteExpense, deleteReport, getReport, shareReport, unshareReport } from "../firebase/reportService";
+import { createExpense, deleteExpense, deleteReport, getReport, shareReport, unshareReport, updateExense } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, isOwner, getRemainingDays } from "../utils/reportUtils";
+import { isShared, isOwner, getRemainingDays, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
 import { type User } from "firebase/auth";
+import EditExpense from "./EditExpense";
 
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
@@ -26,7 +26,6 @@ const ReportDetailsPage = () => {
     const [report, setReport] = useState<Report | null>(null);
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
-    const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -105,12 +104,7 @@ const ReportDetailsPage = () => {
     }, [reportId, showAlert, user]);
 
     const handleAddExpense = useCallback(async (title: string, amount: number) => await createExpenseHelper(title, -1 * Math.abs(amount), "खर्चा"), [createExpenseHelper]);
-    const handleTopup = useCallback(async (amount: number) => await createExpenseHelper("टॉप उप", Math.abs(amount), "टॉप उप"), [createExpenseHelper]);;
-
-    const handleExpenseDoubleClick = (expenseId: string) => {
-        setSelectedExpenseId(expenseId);
-        setShowDeleteExpenseDialog(true);
-    };
+    const handleTopup = useCallback(async (amount: number) => await createExpenseHelper("टॉप उप", Math.abs(amount), "टॉप उप"), [createExpenseHelper]);
 
     // Utility method for adding/removing emails
     const manageEmailShare = useCallback(async (
@@ -152,6 +146,36 @@ const ReportDetailsPage = () => {
         await manageEmailShare(email, "remove", "अनशेयर"), [manageEmailShare]);
 
 
+    const handleEditExpense = useCallback(async (title: string, amount: number) => {
+        try {
+            if (!reportId) {
+                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                return;
+            }
+            if (!selectedExpenseId) {
+                showAlert("खर्चे की आईडी उपलब्ध नहीं है", "error");
+                return;
+
+            }
+
+            // Update expense
+            setLoading(true);
+            await updateExense({ reportId, expenseId: selectedExpenseId, title, amount });
+
+            // Refresh report
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+
+            showAlert("खर्चा सफलता पूर्वक बदला गया", "success");
+        } catch (err) {
+            console.log(err);
+            showAlert("खर्चा बदलने में समस्या हुई", "error");
+        } finally {
+            setSelectedExpenseId(null);
+            setLoading(false);
+        }
+    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, getReport, setReport, showAlert]);
+
     const handleDeleteExpense = useCallback(async () => {
         try {
             if (!reportId) {
@@ -177,11 +201,10 @@ const ReportDetailsPage = () => {
             console.log(err);
             showAlert("खर्चा हटाने में समस्या हुई", "error");
         } finally {
-            setShowDeleteExpenseDialog(false);
             setSelectedExpenseId(null);
             setLoading(false);
         }
-    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, deleteExpense, setShowDeleteExpenseDialog]);;
+    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, deleteExpense]);
 
     const handleDeleteReport = async () => {
         try {
@@ -203,9 +226,11 @@ const ReportDetailsPage = () => {
 
     if (!report) return <Loader visible={true} />;
 
-    const topupAmount = report.expenses.filter(e => !e.deleted && e.amount > 0).reduce((total, e) => total + e.amount, 0);
-    const spentAmount = Math.abs(report.expenses.filter(e => !e.deleted && e.amount < 0).reduce((total, e) => total + e.amount, 0));
+    const topupAmount = calculateTopupAmount(report);
+    const spentAmount = calculateAmountSpent(report);
     const remainingBudget = report.budget + topupAmount - spentAmount;
+    const selectedExpense = selectedExpenseId && report.expenses.find(e => e.id === selectedExpenseId);
+    const canActOnExpense = isOwner(report, user?.email);
 
     return (
         <div className="report-details-container">
@@ -248,16 +273,19 @@ const ReportDetailsPage = () => {
 
             <div className="expenses-title">
                 खर्चों की सूची
-                <div className="expense-note">
-                    (खर्चा हटाने के लिए दो बार खर्चे पर दबाएँ)
-                </div>
+                {canActOnExpense && <div className="expense-note">
+                    (खर्चे में बदलाव करने के लिए दो बार खर्चे पर दबाएँ)
+                </div>}
             </div>
 
             <div className="expenses-list">
                 {report.expenses.map((expense) => (
                     <div className={`expense-item ${expense.deleted && "deleted"}`} key={expense.id}
-                        onDoubleClick={() => !expense.deleted && handleExpenseDoubleClick(expense.id)}
-                    >
+                        onDoubleClick={() => {
+                            if (canActOnExpense && !expense.deleted) {
+                                setSelectedExpenseId(expense.id);
+                            }
+                        }}>
                         <div className="expense-info">
                             <p className="expense-title">{expense.title}</p>
                             <p className="expense-date">{new Date(expense.date).toLocaleDateString("hi-IN")}</p>
@@ -292,16 +320,16 @@ const ReportDetailsPage = () => {
                 />
             }
 
-            <ConfirmDialog
-                open={showDeleteExpenseDialog}
-                title="खर्च हटाना चाहते हैं?"
-                message="यह खर्च स्थायी रूप से हट जाएगा।"
-                confirmText="हटाएँ"
-                cancelText="रद्द करें"
-                onConfirm={handleDeleteExpense}
-                onCancel={() => setShowDeleteExpenseDialog(false)}
-            />
-
+            {
+                selectedExpense &&
+                <EditExpense
+                    expenseTitle={selectedExpense.title}
+                    expenseAmount={selectedExpense.amount.toString()}
+                    onCancel={() => setSelectedExpenseId(null)}
+                    onDelete={handleDeleteExpense}
+                    onEdit={handleEditExpense}
+                />
+            }
         </div>
     );
 };

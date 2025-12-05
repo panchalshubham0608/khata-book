@@ -93,6 +93,18 @@ export async function createExpense(options: CreateExpenseOptions) {
   return expenseRef.id;
 }
 
+interface UpdateExpenseOptions {
+  reportId: string;
+  expenseId: string;
+  title: string;
+  amount: number;
+}
+export async function updateExense(options: UpdateExpenseOptions) {
+  const { reportId, expenseId, title, amount } = options;
+  const expenseRef = doc(db, "reports", reportId, "expenses", expenseId);
+  await updateDoc(expenseRef, { title, amount, updatedAt: new Date().toISOString() });
+}
+
 export async function deleteExpense(reportId: string, expenseId: string) {
   const expenseRef = doc(db, "reports", reportId, "expenses", expenseId);
   await updateDoc(expenseRef, { deleted: true, deletedAt: new Date().toISOString() });

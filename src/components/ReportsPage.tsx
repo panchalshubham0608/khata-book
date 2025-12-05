@@ -10,7 +10,7 @@ import { createReport, getReports } from "../firebase/reportService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, spentAmount, topupAmount } from "../utils/reportUtils";
+import { isShared, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 
 const ReportsPage = () => {
@@ -118,7 +118,7 @@ const ReportsPage = () => {
             <div className="reports-list-container">
                 <div className="reports-list">
                     {reports.map((report) => {
-                        const percentage = Math.min((spentAmount(report) / (report.budget + topupAmount(report))) * 100, 100);
+                        const percentage = Math.min((calculateAmountSpent(report) / (report.budget + calculateTopupAmount(report))) * 100, 100);
                         let progressColor = "#28a745";
                         if (percentage > 75) {
                             progressColor = "#dc3545";
@@ -143,7 +143,7 @@ const ReportsPage = () => {
                                         बजट : ₹{report.budget.toLocaleString()}
                                     </p>
                                     <p className="report-spent">
-                                        खर्चा : ₹{spentAmount(report).toLocaleString()}
+                                        खर्चा : ₹{calculateAmountSpent(report).toLocaleString()}
                                     </p>
                                 </div>
 

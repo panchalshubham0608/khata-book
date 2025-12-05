@@ -60,38 +60,6 @@
     margin-top: 10px !important;
 }
 
-
-/* Cancel button */
-.btn-cancel {
-    background: #ffe5e5;
-    color: #d9534f;
-    padding: 8px 14px;
-    font-size: 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.btn-cancel:hover {
-    background: #ffd6d6;
-}
-
-/* Add button */
-.btn-add {
-    background: #007bff;
-    color: #fff;
-    padding: 8px 16px;
-    font-size: 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.btn-add:hover {
-    background: #006ae0;
-}
-
 .modal-footer {
     display: flex;
     justify-content: flex-end;

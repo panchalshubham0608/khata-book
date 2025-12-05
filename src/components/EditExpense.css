@@ -1,0 +1,54 @@
+/* Overlay Background */
+.edit-expense-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+/* Modal Container */
+.edit-expense-container {
+    width: 280px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+    animation: cd-popup 0.2s ease-out;
+}
+
+.edit-expense-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.edit-expense-header button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-expense-container h2 {
+    margin: 0 0 8px 0;
+}
+
+.edit-expense-container input {
+    font-size: 16px;
+    width: 100%;
+}
+
+.edit-expense-footer {
+    margin-top: 10px;
+}
+
+.edit-expense-footer button {
+    font-size: 16px;
+}
+
+.edit-expense-footer .btn-cancel {
+    background-color: #ff4d4d;
+    color: white;
+}
