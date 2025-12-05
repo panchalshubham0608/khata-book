@@ -1,73 +1,103 @@
-# React + TypeScript + Vite
+# 📘 Khata Book – Personal Expense Tracker (PWA)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A clean, fast, and modern expense tracking web app inspired by traditional “खाता-बही” practices.
+Built with React + Vite, Firebase Firestore, and react-i18next for bilingual support (Hindi/English).
 
-Currently, two official plugins are available:
+The app works as a PWA, supports offline caching, and can be installed on mobile or desktop.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# 🚀 Features
+## 🧾 Expense Tracking
+- Add, edit, and delete expenses
+- Categorize income/expense using positive/negative amounts
+- Soft-deletion with auto cleanup after 30 days
+- Voice input parsing (e.g.,
+"दूध के ₹200" → title: "दूध", amount: 200)
 
-## React Compiler
+## 📊 Reports
+- Create multiple reports
+- Track total spent and remaining budget
+- Top-up budgets
+- Share reports with other users (email based)
+- Manage access (add/remove shared users)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🧠 Voice Input Parsing
+Smart parsing for natural Hindi input:
+Examples handled:
+- दूध के ₹200
+- सब्जियों के 93 रुपए
+- पेट्रोल के 300
+- 300 petrol
+- petrol 300
 
-## Expanding the ESLint configuration
+Extracts both title + amount automatically.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🗑️ Soft Deletion System
+- Deleted reports & expenses are only marked deleted  true
+- Automatically purged after 30 days
+- Shows a chip like: “मिट जाएगा X दिनों में” (auto-expiry countdown)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 👤 Authentication
+- Login with Google
+- Session stays persistent across reloads (using Firestore Auth persistence)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 💾 Persistence
+- Firebase Firestore
+- Query filters exclude soft-deleted reports
+- LocalStorage for UI preferences (e.g., “Show deleted reports”)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 🔧 Setup Instructions
+1. Clone the repo
+```bash
+git clone https://github.com/<your-username>/khata-book-webapp.git
+cd khata-book-webapp
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. Install dependencies
+```bash
+npm install
 ```
+
+3. Set up Firebase environment
+Create .env:
+```env
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_FIREBASE_MEASUREMENT_ID=...
+```
+
+4. Start the dev server
+```bash
+npm run dev
+```
+
+5. Build for production
+```bash
+npm run build
+```
+
+# 📦 Deployment
+The app can be deployed on:
+- GitHub Pages (supports PWA install prompts)
+- Vercel
+- Firebase Hosting
+- Netlify
+
+When deploying on GitHub pages, ensure the Vite config uses:
+```js
+export default defineConfig({
+  base: "/khata-book/"
+});
+```
+
+# 🤝 Contributing
+- Fork the repo
+- Create a feature branch
+- Commit changes
+- Open a pull request
+
+# 📄 License
+MIT License.
