@@ -230,7 +230,7 @@ const ReportDetailsPage = () => {
     const spentAmount = calculateAmountSpent(report);
     const remainingBudget = report.budget + topupAmount - spentAmount;
     const selectedExpense = selectedExpenseId && report.expenses.find(e => e.id === selectedExpenseId);
-    const canActOnExpense = isOwner(report, user?.email);
+    const canActOnExpense = isOwner(report, user?.email) && !report.deleted;
 
     return (
         <div className="report-details-container">
