@@ -8,7 +8,7 @@ interface ExpenseRowProps {
 
 const ExpenseRow = (props: ExpenseRowProps) => {
     const { expense, onAction } = props;
-    const longPress = useLongPress(onAction, { threshold: 650 });
+    const longPress = useLongPress(onAction, { threshold: 900 });
 
     return (
         <div className={`expense-item ${expense.deleted && "deleted"}`} key={expense.id}
