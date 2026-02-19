@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ConfirmDialog from "./ConfirmDialog";
 import "./ManageAccessPopup.css";
+import { getContacts } from "../firebase/contactService";
+import type { Contact } from "../firebase/types";
 
 interface ManageAccessPopupProps {
     sharedWith: string[];
@@ -18,11 +20,30 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
     const [email, setEmail] = useState<string>("");
     const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
     const [showRemoveEmail, setShowRemoveEmail] = useState<boolean>(false);
+    const [contacts, setContacts] = useState<Contact[]>([]);
 
-    const handleAdd = () => {
+    const handleAdd = (email: string) => {
         onAddEmail(email.trim());
         setEmail("");
     };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchContacts = async () => {
+            const data = await getContacts();
+            if (isMounted) {
+                setContacts(data.filter(contact => !sharedWith.includes(contact.email)));
+            }
+        };
+
+        fetchContacts();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [getContacts, sharedWith]);
+
 
     return (
         <div className="access-overlay">
@@ -36,10 +57,21 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
                         onChange={(e) => setEmail(e.target.value)}
                         className="access-input"
                     />
-                    <button className="access-add-btn" onClick={handleAdd}>
+                    <button className="access-add-btn" onClick={() => handleAdd(email)}>
                         जोड़ें
                     </button>
                 </div>
+                {contacts.length > 0 &&
+                    <div>
+                        <div className="access-list-title">आपके कॉन्टेक्ट्स</div>
+                        {contacts.map(c => (
+                            <div className="contact-chip"
+                                onClick={() => handleAdd(c.email)}>
+                                <span>{c.email}</span>
+                                <span className="contact-chip-icon">+</span>
+                            </div>
+                        ))}
+                    </div>}
 
                 <div className="access-list-title">पहले से साझा किया गया:</div>
 

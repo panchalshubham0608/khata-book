@@ -21,3 +21,10 @@ export interface Report {
     deleted?: boolean;      // Soft delete flag
     deletedAt?: string;     // Timestamp when this expense was soft-deleted
 }
+
+export interface Contact {
+    id: string;             // Unique ID of the contact
+    owner: string;          // Owner of this contact
+    email: string;          // Email of the contact
+    createdAt: string;      // ISO timestamp when contact was created
+}
