@@ -12,6 +12,7 @@ import Alert from "./Alert";
 import Loader from "./Loader";
 import { isShared, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
+import Contacts from "./Contacts";
 
 const ReportsPage = () => {
     const navigate = useNavigate();
@@ -23,6 +24,7 @@ const ReportsPage = () => {
         const stored = localStorage.getItem("showDeleted");
         return stored === "true"; // converts string "true" to boolean true, everything else is false
     });
+    const [showContacts, setShowContacts] = useState(false);
     const { alert, showAlert } = useAlert();
 
     const fetchReports = useCallback(async (email: string) => {
@@ -102,6 +104,7 @@ const ReportsPage = () => {
             <ReportsHamburger
                 showDeleted={showDeleted}
                 toggleShowDeleted={toggleShowDeleted}
+                showContacts={() => setShowContacts(true)}
                 handleLogout={handleLogout}
             />
             <div className="reports-topbar">
@@ -181,6 +184,7 @@ const ReportsPage = () => {
                 />
             )}
 
+            {showContacts && <Contacts onClose={() => setShowContacts(false)} />}
         </div>
     );
 };

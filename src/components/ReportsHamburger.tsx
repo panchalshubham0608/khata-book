@@ -6,12 +6,14 @@ import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
 interface ReportsHamburgerProps {
     showDeleted: boolean;
     toggleShowDeleted: () => void;
+    showContacts: () => void;
     handleLogout: () => void;
 }
 
 const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     showDeleted,
     toggleShowDeleted,
+    showContacts,
     handleLogout,
 }) => {
     const reportsMenuItems: HamburgerItem[] = [
@@ -20,6 +22,11 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
             label: "हटाए गए रिपोर्ट दिखाएँ",
             ticked: showDeleted,
             onClick: toggleShowDeleted,
+        },
+        {
+            key: "contacts",
+            label: "कॉन्टेक्ट्स",
+            onClick: showContacts,
         },
         {
             key: "logout",
