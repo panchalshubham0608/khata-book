@@ -76,14 +76,8 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
 
       {showAccessPopup && <ManageAccessPopup
         sharedWith={sharedWith}
-        onAddEmail={(email) => {
-          setShowAccessPopup(false);
-          onAddEmail?.(email);
-        }}
-        onRemoveEmail={(email) => {
-          setShowAccessPopup(false);
-          onRemoveEmail?.(email);
-        }}
+        onAddEmail={(email) => onAddEmail?.(email)}
+        onRemoveEmail={(email) => onRemoveEmail?.(email)}
         onClose={() => setShowAccessPopup(false)}
       />}
 
