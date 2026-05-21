@@ -28,3 +28,10 @@ export interface Contact {
     email: string;          // Email of the contact
     createdAt: string;      // ISO timestamp when contact was created
 }
+
+export interface Category {
+    id: string;             // Unique ID of the category
+    owner: string;          // Owner of this category
+    name: string;           // Category name
+    createdAt: string;      // Timestamp when category was created
+}

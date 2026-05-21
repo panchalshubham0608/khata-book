@@ -7,6 +7,7 @@ import { auth } from "../firebase/firebase";
 import "./ReportsPage.css";
 import type { Report } from "../firebase/types";
 import { createReport, getReports } from "../firebase/reportService";
+import Categories from "./Categories";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
@@ -26,6 +27,7 @@ const ReportsPage = () => {
         return stored === "true"; // converts string "true" to boolean true, everything else is false
     });
     const [showContacts, setShowContacts] = useState(false);
+    const [showCategories, setShowCategories] = useState(false);
     const { alert, showAlert } = useAlert();
     const { t } = useTranslation();
 
@@ -107,6 +109,7 @@ const ReportsPage = () => {
                 showDeleted={showDeleted}
                 toggleShowDeleted={toggleShowDeleted}
                 showContacts={() => setShowContacts(true)}
+                showCategories={() => setShowCategories(true)}
                 handleLogout={handleLogout}
             />
             <div className="reports-topbar">
@@ -187,6 +190,7 @@ const ReportsPage = () => {
             )}
 
             {showContacts && <Contacts onClose={() => setShowContacts(false)} />}
+            {showCategories && <Categories onClose={() => setShowCategories(false)} />}
         </div>
     );
 };
