@@ -11,6 +11,7 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    environment: cleanup-script
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
