@@ -123,6 +123,7 @@
   "amountModal.add": "Add",
   "amountModal.invalidTitle": "{field} is not valid.",
   "amountModal.invalidAmount": "{field} is not valid.",
+  "amountModal.selectCategories": "Select categories (optional)",
   "reportHamburger.manageAccess": "Manage access",
   "reportHamburger.topup": "Top-up",
   "reportHamburger.deleteReport": "Delete report",

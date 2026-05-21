@@ -8,6 +8,7 @@ export interface Expense {
     createdAt: string;          // Timestamp when this expense was created
     deleted?: boolean;          // Soft delete flag
     deletedAt?: string;         // Timestamp when this expense was soft-deleted
+    categories?: string[];      // Optional list of category IDs
 }
 
 export interface Report {

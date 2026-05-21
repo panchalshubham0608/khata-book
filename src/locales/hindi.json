@@ -123,6 +123,7 @@
   "amountModal.add": "जोड़ें",
   "amountModal.invalidTitle": "{field} वैध नहीं है",
   "amountModal.invalidAmount": "{field} वैध नहीं है",
+  "amountModal.selectCategories": "श्रेणियाँ चुनें (वैकल्पिक)",
   "reportHamburger.manageAccess": "पहुँच नियंत्रण",
   "reportHamburger.topup": "टॉप उप",
   "reportHamburger.deleteReport": "रिपोर्ट हटाएँ",

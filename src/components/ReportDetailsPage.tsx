@@ -74,7 +74,7 @@ const ReportDetailsPage = () => {
         return () => unsubscribe();
     }, [reportId, showAlert, t]);
 
-    const createExpenseHelper = useCallback(async (title: string, amount: number, label: string) => {
+    const createExpenseHelper = useCallback(async (title: string, amount: number, label: string, categories?: string[]) => {
         if (!user || !user.email || !user.displayName) {
             showAlert(t("reportDetails.ownerMissing"), "error");
             return;
@@ -91,7 +91,8 @@ const ReportDetailsPage = () => {
                 expenseTitle: title,
                 expenseAmount: amount,
                 authorEmail: user.email,
-                authorDisplayName: user.displayName
+                authorDisplayName: user.displayName,
+                categories
             });
 
             const updated = await getReport(reportId);
@@ -107,7 +108,7 @@ const ReportDetailsPage = () => {
         }
     }, [reportId, showAlert, user, t]);
 
-    const handleAddExpense = useCallback(async (title: string, amount: number) => await createExpenseHelper(title, -1 * Math.abs(amount), t("reportDetails.expenseLabel")), [createExpenseHelper, t]);
+    const handleAddExpense = useCallback(async (title: string, amount: number, categories?: string[]) => await createExpenseHelper(title, -1 * Math.abs(amount), t("reportDetails.expenseLabel"), categories), [createExpenseHelper, t]);
     const handleTopup = useCallback(async (amount: number) => await createExpenseHelper(t("reportDetails.action.topup"), Math.abs(amount), t("reportDetails.action.topup")), [createExpenseHelper, t]);
 
     const manageEmailShare = useCallback(async (
@@ -364,6 +365,7 @@ const ReportDetailsPage = () => {
                     header={t("reportDetails.addExpenseHeader")}
                     titlePlaceholder={t("reportDetails.expenseNamePlaceholder")}
                     amountPlaceholder={t("reportDetails.expenseAmountPlaceholder")}
+                    showCategories={true}
                     onReject={() => setOpenExpenseModal(false)}
                     onAccept={handleAddExpense}
                 />
