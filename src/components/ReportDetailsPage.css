@@ -56,6 +56,31 @@
     color: #555;
 }
 
+.search-container {
+    margin: 20px 0;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    font-size: 16px;
+    color: #1f2937;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+    border-color: #0074d9;
+    box-shadow: 0 0 0 4px rgba(0, 116, 217, 0.1);
+}
+
+.filtered-summary {
+    margin: 12px 0 0;
+}
+
 .expenses-title {
     margin-top: 30px;
     margin-bottom: 30px;
