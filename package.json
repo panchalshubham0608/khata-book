@@ -7,10 +7,12 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cleanup:reports": "node scripts/cleanupReports.js"
   },
   "dependencies": {
     "firebase": "^12.6.0",
+    "firebase-admin": "^13.10.0",
     "gh-pages": "^6.3.0",
     "i18next": "^25.6.3",
     "i18next-browser-languagedetector": "^8.2.0",
