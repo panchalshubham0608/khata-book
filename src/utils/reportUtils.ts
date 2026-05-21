@@ -8,7 +8,7 @@ export const isOwner = (report: Report, currentUserEmail: string | null | undefi
 export const getRemainingDays = (deletedAt: string | number): number => {
     const deletedDate = new Date(deletedAt).getTime();
     const now = Date.now();
-    const expiryMs = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
+    const expiryMs = 60 * 24 * 60 * 60 * 1000; // 60 days in ms
     const remainingMs = expiryMs - (now - deletedDate);
     return remainingMs > 0 ? Math.ceil(remainingMs / (1000 * 60 * 60 * 24)) : 0;
 }
