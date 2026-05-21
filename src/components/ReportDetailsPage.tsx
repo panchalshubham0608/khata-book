@@ -1,5 +1,5 @@
 // ReportDetailsPage.tsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { FiShare2, FiPlus, FiFileText } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
@@ -30,6 +30,8 @@ const ReportDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
     useEffect(() => {
         if (!reportId) return;
@@ -217,6 +219,39 @@ const ReportDetailsPage = () => {
         }
     };
 
+    useEffect(() => {
+        const handler = window.setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm.trim().toLowerCase());
+        }, 250);
+
+        return () => window.clearTimeout(handler);
+    }, [searchTerm]);
+
+    const filteredExpenses = useMemo(() => {
+        if (!report) return [];
+        if (!debouncedSearchTerm) return report.expenses;
+        return report.expenses.filter((expense) =>
+            expense.title.toLowerCase().includes(debouncedSearchTerm) ||
+            expense.authorDisplayName.toLowerCase().includes(debouncedSearchTerm) ||
+            expense.authorEmail.toLowerCase().includes(debouncedSearchTerm) ||
+            expense.amount.toString().includes(debouncedSearchTerm)
+        );
+    }, [report, debouncedSearchTerm]);
+
+    const filteredTotals = useMemo(() => {
+        return filteredExpenses.reduce(
+            (acc, expense) => {
+                if (expense.amount < 0) {
+                    acc.spent += Math.abs(expense.amount);
+                } else {
+                    acc.topup += expense.amount;
+                }
+                return acc;
+            },
+            { spent: 0, topup: 0 }
+        );
+    }, [filteredExpenses]);
+
     if (!report) return <Loader visible={true} />;
 
     const topupAmount = calculateTopupAmount(report);
@@ -266,6 +301,28 @@ const ReportDetailsPage = () => {
                 </div>
             </div>
 
+            <div className="search-container">
+                <input
+                    className="search-input"
+                    type="search"
+                    value={searchTerm}
+                    placeholder={t("reportDetails.searchPlaceholder")}
+                    aria-label={t("reportDetails.searchPlaceholder")}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            {searchTerm.trim() !== "" && (
+                <div className="filtered-summary chips-container">
+                    <span className="chip spent">
+                        {t("reportDetails.filteredSpentChip", { amount: filteredTotals.spent.toLocaleString() })}
+                    </span>
+                    <span className="chip topup">
+                        {t("reportDetails.filteredTopupChip", { amount: filteredTotals.topup.toLocaleString() })}
+                    </span>
+                </div>
+            )}
+
             <div className="expenses-title">
                 {t("reportDetails.expensesTitle")}
                 {canActOnExpense && <div className="expense-note">
@@ -274,7 +331,7 @@ const ReportDetailsPage = () => {
             </div>
 
             <div className="expenses-list">
-                {report.expenses.map((expense) => (
+                {filteredExpenses.map((expense) => (
                     <ExpenseRow key={expense.id} expense={expense} onAction={() => {
                         if (canActOnExpense && !expense.deleted) {
                             setSelectedExpenseId(expense.id)
@@ -286,6 +343,12 @@ const ReportDetailsPage = () => {
                         <FiFileText size={48} className="no-reports-icon" />
                         <p className="no-reports-text">{t("reportDetails.noExpenses")}</p>
                         <p className="no-reports-subtext">{t("reportDetails.noExpensesSubtext")}</p>
+                    </div>}
+                {report.expenses.length > 0 && filteredExpenses.length === 0 &&
+                    <div className="no-reports-container">
+                        <FiFileText size={48} className="no-reports-icon" />
+                        <p className="no-reports-text">{t("reportDetails.noMatchingExpenses")}</p>
+                        <p className="no-reports-subtext">{t("reportDetails.searchEmptySubtext")}</p>
                     </div>}
             </div>
 
