@@ -3,6 +3,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import "./ManageAccessPopup.css";
 import { getContacts } from "../firebase/contactService";
 import type { Contact } from "../firebase/types";
+import { useTranslation } from "../i18n/locale";
 
 interface ManageAccessPopupProps {
     sharedWith: string[];
@@ -21,6 +22,7 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
     const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
     const [showRemoveEmail, setShowRemoveEmail] = useState<boolean>(false);
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const { t } = useTranslation();
 
     const handleAdd = (email: string) => {
         onAddEmail(email.trim());
@@ -44,26 +46,25 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
         };
     }, [getContacts, sharedWith]);
 
-
     return (
         <div className="access-overlay">
             <div className="access-box">
-                <div className="access-title">आपकी रिपोर्ट कौन देख सकता है?</div>
+                <div className="access-title">{t("manageAccess.title")}</div>
                 <div className="access-input-row">
                     <input
                         type="email"
-                        placeholder="ईमेल दर्ज करें"
+                        placeholder={t("manageAccess.placeholder")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="access-input"
                     />
                     <button className="access-add-btn" onClick={() => handleAdd(email)}>
-                        जोड़ें
+                        {t("manageAccess.addButton")}
                     </button>
                 </div>
                 {contacts.length > 0 &&
                     <div>
-                        <div className="access-list-title">आपके कॉन्टेक्ट्स</div>
+                        <div className="access-list-title">{t("manageAccess.contactsTitle")}</div>
                         {contacts.map(c => (
                             <div className="contact-chip"
                                 onClick={() => handleAdd(c.email)}>
@@ -73,10 +74,10 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
                         ))}
                     </div>}
 
-                <div className="access-list-title">पहले से साझा किया गया:</div>
+                <div className="access-list-title">{t("manageAccess.sharedWithTitle")}</div>
 
                 {sharedWith.length === 0 ? (
-                    <div className="access-empty">कोई नहीं</div>
+                    <div className="access-empty">{t("manageAccess.none")}</div>
                 ) : (
                     <ul className="access-list">
                         {sharedWith.map((e) => (
@@ -89,25 +90,24 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
                                         setShowRemoveEmail(true);
                                     }}
                                 >
-                                    हटाएँ
+                                    {t("manageAccess.removeConfirmConfirmText")}
                                 </button>
                             </li>
                         ))}
                     </ul>
                 )}
 
-                {/* Close button */}
                 <button className="access-close-btn" onClick={onClose}>
-                    बंद करें
+                    {t("manageAccess.closeButton")}
                 </button>
             </div>
 
             <ConfirmDialog
                 open={showRemoveEmail}
-                title="साजा ना करे?"
-                message="चुने गए व्यक्ति आपकी रिपोर्ट नहीं देख सकेंगे|"
-                confirmText="हटाएँ"
-                cancelText="रद्द करें"
+                title={t("manageAccess.removeConfirmTitle")}
+                message={t("manageAccess.removeConfirmMessage")}
+                confirmText={t("manageAccess.removeConfirmConfirmText")}
+                cancelText={t("manageAccess.removeConfirmCancelText")}
                 onConfirm={() => {
                     if (selectedEmail) onRemoveEmail(selectedEmail);
                     setSelectedEmail(null);

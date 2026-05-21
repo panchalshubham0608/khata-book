@@ -7,6 +7,7 @@ import { isValidEmail } from "../utils/validationUtils";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
+import { useTranslation } from "../i18n/locale";
 
 interface ContactsProps {
     onClose: () => void;
@@ -21,6 +22,7 @@ const Contacts: React.FC<ContactsProps> = ({
     const [showRemoveContact, setShowRemoveContact] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const { alert, showAlert } = useAlert();
+    const { t } = useTranslation();
 
     const fetchContacts = useCallback(async () => {
         setLoading(true);
@@ -29,11 +31,11 @@ const Contacts: React.FC<ContactsProps> = ({
             setContacts(fetchedContacts);
         } catch (err) {
             console.log(err);
-            showAlert("आपके कॉन्टेक्ट्स लाने में समस्या हुई।", "error");
+            showAlert(t("contacts.loadError"), "error");
         } finally {
             setLoading(false);
         }
-    }, [getContacts]);
+    }, [getContacts, showAlert, t]);
 
     useEffect(() => {
         fetchContacts();
@@ -41,18 +43,18 @@ const Contacts: React.FC<ContactsProps> = ({
 
     const handleAdd = async () => {
         if (!isValidEmail(email)) {
-            showAlert("यह कांटेक्ट ईमेल मान्य नहीं है।", "error");
+            showAlert(t("contacts.invalidEmail"), "error");
             return;
         }
         try {
             setLoading(true);
             await addContact(email);
-            showAlert("आपका कांटेक्ट सफलतापूर्वक जोड़ा गया।", "success");
+            showAlert(t("contacts.addSuccess"), "success");
             setEmail("");
             await fetchContacts();
         } catch (err) {
             console.log(err);
-            showAlert("आपका कांटेक्ट जोड़ने में समस्या हुई।", "error");
+            showAlert(t("contacts.addError"), "error");
         } finally {
             setLoading(false);
         }
@@ -62,11 +64,11 @@ const Contacts: React.FC<ContactsProps> = ({
         try {
             setLoading(true);
             await deleteContact(contactId);
-            showAlert("कांटेक्ट सफलतापूर्वक हटाया गया।", "success");
-            await fetchContacts(); // refresh list
+            showAlert(t("contacts.deleteSuccess"), "success");
+            await fetchContacts();
         } catch (err) {
             console.log(err);
-            showAlert("कांटेक्ट हटाने में समस्या हुई।", "error");
+            showAlert(t("contacts.deleteError"), "error");
         } finally {
             setLoading(false);
         }
@@ -77,24 +79,24 @@ const Contacts: React.FC<ContactsProps> = ({
             <Alert alert={alert} />
             <Loader visible={loading} />
             <div className="contacts-box">
-                <div className="contacts-title">कॉन्टेक्ट्स</div>
+                <div className="contacts-title">{t("contacts.title")}</div>
                 <div className="contacts-input-row">
                     <input
                         type="email"
-                        placeholder="ईमेल दर्ज करें"
+                        placeholder={t("contacts.placeholder")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="contacts-input"
                     />
                     <button className="contacts-add-btn" onClick={handleAdd}>
-                        जोड़ें
+                        {t("contacts.addButton")}
                     </button>
                 </div>
 
-                <div className="contacts-list-title">आपके कॉन्टेक्ट्स:</div>
+                <div className="contacts-list-title">{t("contacts.listTitle")}</div>
 
                 {contacts.length === 0 ? (
-                    <div className="contacts-empty">कोई नहीं</div>
+                    <div className="contacts-empty">{t("contacts.empty")}</div>
                 ) : (
                     <ul className="contacts-list">
                         {contacts.map((c) => (
@@ -107,25 +109,24 @@ const Contacts: React.FC<ContactsProps> = ({
                                         setShowRemoveContact(true);
                                     }}
                                 >
-                                    हटाएँ
+                                    {t("contacts.removeConfirmConfirmText")}
                                 </button>
                             </li>
                         ))}
                     </ul>
                 )}
 
-                {/* Close button */}
                 <button className="contacts-close-btn" onClick={onClose}>
-                    बंद करें
+                    {t("contacts.closeButton")}
                 </button>
             </div>
 
             <ConfirmDialog
                 open={showRemoveContact}
-                title="कांटेक्ट को हटाए?"
-                message="यह कांटेक्ट आपकी लिस्ट से हटा दिया जायेग।"
-                confirmText="हटाएँ"
-                cancelText="रद्द करें"
+                title={t("contacts.removeConfirmTitle")}
+                message={t("contacts.removeConfirmMessage")}
+                confirmText={t("contacts.removeConfirmConfirmText")}
+                cancelText={t("contacts.removeConfirmCancelText")}
                 onConfirm={() => {
                     if (selectedContact) removeContact(selectedContact.id);
                     setSelectedContact(null);

@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import { parseHindiExpense } from "../utils/voiceInputUtils";
+import { useTranslation } from "../i18n/locale";
 
 interface AmountModalInputProps {
     header: string;
@@ -15,6 +16,7 @@ interface AmountModalInputProps {
 
 const AmountModalInput = (props: AmountModalInputProps) => {
     const { alert, showAlert } = useAlert();
+    const { t } = useTranslation();
     const [title, setTitle] = useState<string>("");
     const [amount, setAmount] = useState<string>("");
 
@@ -35,22 +37,22 @@ const AmountModalInput = (props: AmountModalInputProps) => {
 
     const handleAccept = useCallback(() => {
         if (props.titlePlaceholder && !title.trim()) {
-            showAlert(props.titlePlaceholder + " वैध नहीं है", "error");
+            showAlert(t("amountModal.invalidTitle", { field: props.titlePlaceholder }), "error");
             return;
         }
         const number = Number(amount);
         if (!Number.isFinite(number) || number <= 0) {
-            showAlert(props.amountPlaceholder + " वैध नहीं है", "error");
+            showAlert(t("amountModal.invalidAmount", { field: props.amountPlaceholder }), "error");
             return;
         }
         props.onAccept(title, number);
         clearInputs();
-    }, [title, amount]);
+    }, [title, amount, props.amountPlaceholder, props.titlePlaceholder, props.onAccept, props.onReject, showAlert, t]);
 
     const handleReject = useCallback(() => {
         clearInputs();
         props.onReject();
-    }, []);
+    }, [props]);
 
 
     return (
@@ -73,8 +75,8 @@ const AmountModalInput = (props: AmountModalInputProps) => {
                 </div>
 
                 <div className="modal-footer">
-                    <button className="btn-cancel" onClick={handleReject}>रद्द करें</button>
-                    <button className="btn-add" onClick={handleAccept}>जोड़ें</button>
+                    <button className="btn-cancel" onClick={handleReject}>{t("amountModal.cancel")}</button>
+                    <button className="btn-add" onClick={handleAccept}>{t("amountModal.add")}</button>
                 </div>
             </div>
         </div>

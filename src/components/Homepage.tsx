@@ -4,9 +4,11 @@ import logo from "../assets/logo192.png";
 import { auth, googleProvider } from "../firebase/firebase";
 import { signInWithPopup, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../i18n/locale";
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleGoogleLogin = async () => {
     try {
@@ -14,7 +16,7 @@ const HomePage: React.FC = () => {
       navigate("/reports");
     } catch (error) {
       console.error("Google Login Error:", error);
-      alert("Google लॉगिन नहीं हो पाया, कृपया फिर कोशिश करें");
+      alert(t("homepage.loginError"));
     }
   };
 
@@ -35,15 +37,14 @@ const HomePage: React.FC = () => {
       <div className="home-content">
         <img src={logo} className="home-logo" alt="Khata Book Logo" />
 
-        <h1 className="home-title">खाता बुक</h1>
+        <h1 className="home-title">{t("homepage.title")}</h1>
 
         <p className="home-description">
-          साफ़-सुथरे और आसान इंटरफ़ेस के साथ अपने दैनिक खर्चों को आसानी से ट्रैक करें।
-          अपने खाता-बही को पहले से कहीं बेहतर तरीके से मैनेज करें।
+          {t("homepage.description")}
         </p>
 
         <button className="home-button" onClick={handleGoogleLogin}>
-          शुरू करे
+          {t("homepage.startButton")}
         </button>
       </div>
     </div>
