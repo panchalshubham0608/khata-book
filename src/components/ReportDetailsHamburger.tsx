@@ -4,16 +4,14 @@ import ConfirmDialog from "./ConfirmDialog";
 import ManageAccessPopup from "./ManageAccessPopup";
 import AmountModalInput from "./AmountModalInput";
 import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
+import { useTranslation } from "../i18n/locale";
 
 interface ReportHamburgerMenuProps {
-  sharedWith: string[],
+  sharedWith: string[];
   onAddEmail?: (email: string) => void;
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
   onTopup?: (amount: number) => void;
-  labelManageAccess?: string;
-  labelTopup?: string;
-  labelDeleteReport?: string;
 }
 
 const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
@@ -22,10 +20,8 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   onRemoveEmail,
   onDeleteReport,
   onTopup,
-  labelManageAccess = "पहुँच नियंत्रण",
-  labelTopup = "टॉप उप",
-  labelDeleteReport = "रिपोर्ट हटाएँ",
 }) => {
+  const { t } = useTranslation();
   const [showDeleteReportDialog, setShowDeleteReportDialog] = useState<boolean>(false);
   const [showAccessPopup, setShowAccessPopup] = useState<boolean>(false);
   const [showTopupInput, setShowTopupInput] = useState<boolean>(false);
@@ -33,19 +29,19 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   const reportMenuItems: HamburgerItem[] = [
     {
       key: "manageAccess",
-      label: labelManageAccess,
+      label: t("reportHamburger.manageAccess"),
       icon: <FiUsers size={16} />,
       onClick: () => setShowAccessPopup(true),
     },
     {
       key: "topup",
-      label: labelTopup,
+      label: t("reportHamburger.topup"),
       icon: <FiPlusCircle size={16} />,
       onClick: () => setShowTopupInput(true),
     },
     {
       key: "deleteReport",
-      label: labelDeleteReport,
+      label: t("reportHamburger.deleteReport"),
       icon: <FiTrash2 size={16} />,
       destructive: true,
       onClick: () => setShowDeleteReportDialog(true),
@@ -61,18 +57,18 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
     <div>
       <HamburgerMenu toggleIcon={<FiMoreVertical size={20} />} items={reportMenuItems} />
 
-      {<ConfirmDialog
+      <ConfirmDialog
         open={showDeleteReportDialog}
-        title="रिपोर्ट हटाना चाहते हैं?"
-        message="यह क्रिया स्थायी है और वापस नहीं की जा सकती।"
-        confirmText="हटाएँ"
-        cancelText="रद्द करें"
+        title={t("reportHamburger.deleteConfirmTitle")}
+        message={t("reportHamburger.deleteConfirmMessage")}
+        confirmText={t("reportHamburger.deleteConfirmConfirmText")}
+        cancelText={t("reportHamburger.deleteConfirmCancelText")}
         onConfirm={() => {
           setShowDeleteReportDialog(false);
           onDeleteReport?.();
         }}
         onCancel={() => setShowDeleteReportDialog(false)}
-      />}
+      />
 
       {showAccessPopup && <ManageAccessPopup
         sharedWith={sharedWith}
@@ -83,8 +79,8 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
 
       {showTopupInput &&
         <AmountModalInput
-          header="बजट में टॉप उप करे"
-          amountPlaceholder="टॉप उप राशि"
+          header={t("reportHamburger.topupHeader")}
+          amountPlaceholder={t("reportHamburger.topupAmountPlaceholder")}
           onAccept={handleTopup}
           onReject={() => setShowTopupInput(false)} />
       }

@@ -6,6 +6,7 @@ import { FiX } from 'react-icons/fi';
 import ConfirmDialog from './ConfirmDialog';
 import { useAlert } from '../hooks/useAlert';
 import Alert from './Alert';
+import { useTranslation } from '../i18n/locale';
 
 interface EditExpenseProps {
     expenseTitle: string;
@@ -17,24 +18,24 @@ interface EditExpenseProps {
 
 const EditExpense = (props: EditExpenseProps) => {
     const { alert, showAlert } = useAlert();
+    const { t } = useTranslation();
     const [title, setTitle] = useState<string>(props.expenseTitle);
     const [amount, setAmount] = useState<string>(Math.abs(Number(props.expenseAmount)).toString());
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
 
     const handleEdit = () => {
         if (!title.trim()) {
-            showAlert("ख़र्च का नाम वैध नहीं है", "error");
+            showAlert(t("editExpense.invalidName"), "error");
             return;
         }
 
         const number = Number(amount);
         if (!Number.isFinite(number) || number <= 0) {
-            showAlert("खर्च की राशि वैध नहीं है", "error");
+            showAlert(t("editExpense.invalidAmount"), "error");
             return;
         }
 
         let updatedAmount = Math.abs(number);
-        // If original expense was negative, new value should be negative
         if (Number(props.expenseAmount) < 0) {
             updatedAmount = -1 * Math.abs(number);
         }
@@ -47,7 +48,7 @@ const EditExpense = (props: EditExpenseProps) => {
             <Alert alert={alert} />
             <div className="edit-expense-container">
                 <div className="edit-expense-header">
-                    <h2>खर्चे में बदलाव करे</h2>
+                    <h2>{t("editExpense.header")}</h2>
                     <button onClick={props.onCancel}>
                         <FiX fontSize={30}></FiX>
                     </button>
@@ -56,11 +57,11 @@ const EditExpense = (props: EditExpenseProps) => {
                     <VoiceInput
                         value={title}
                         onChange={setTitle}
-                        placeholder="ख़र्च का नाम"
+                        placeholder={t("editExpense.namePlaceholder")}
                     />
                     <input
                         type="number"
-                        placeholder="खर्च की राशि"
+                        placeholder={t("editExpense.amountPlaceholder")}
                         value={amount}
                         className="input-field"
                         onChange={(e) => setAmount(e.target.value)}
@@ -68,18 +69,18 @@ const EditExpense = (props: EditExpenseProps) => {
                 </div>
                 <div className="edit-expense-footer">
                     <div className="d-flex align-items-center justify-content-between">
-                        <button className="btn-cancel" onClick={() => setShowDeleteExpenseDialog(true)}>हटाए </button>
-                        <button className="btn-add" onClick={handleEdit}>बदले</button>
+                        <button className="btn-cancel" onClick={() => setShowDeleteExpenseDialog(true)}>{t("editExpense.deleteButton")}</button>
+                        <button className="btn-add" onClick={handleEdit}>{t("editExpense.saveButton")}</button>
                     </div>
                 </div>
             </div>
 
             <ConfirmDialog
                 open={showDeleteExpenseDialog}
-                title="खर्च हटाना चाहते हैं?"
-                message="यह खर्च स्थायी रूप से हट जाएगा।"
-                confirmText="हटाएँ"
-                cancelText="रद्द करें"
+                title={t("editExpense.deleteConfirmTitle")}
+                message={t("editExpense.deleteConfirmMessage")}
+                confirmText={t("editExpense.deleteConfirmConfirmText")}
+                cancelText={t("editExpense.deleteConfirmCancelText")}
                 onConfirm={props.onDelete}
                 onCancel={() => setShowDeleteExpenseDialog(false)}
             />

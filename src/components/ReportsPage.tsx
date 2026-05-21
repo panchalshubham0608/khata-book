@@ -13,6 +13,7 @@ import Loader from "./Loader";
 import { isShared, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 import Contacts from "./Contacts";
+import { useTranslation } from "../i18n/locale";
 
 const ReportsPage = () => {
     const navigate = useNavigate();
@@ -26,6 +27,7 @@ const ReportsPage = () => {
     });
     const [showContacts, setShowContacts] = useState(false);
     const { alert, showAlert } = useAlert();
+    const { t } = useTranslation();
 
     const fetchReports = useCallback(async (email: string) => {
         try {
@@ -34,11 +36,11 @@ const ReportsPage = () => {
             setReports(userReports);
         } catch (err) {
             console.error(err);
-            showAlert("रिपोर्ट लाने में समस्या हुई", "error");
+            showAlert(t("reports.reportLoadError"), "error");
         } finally {
             setLoading(false);
         }
-    }, [setLoading, getReports, setReports, showAlert, showDeleted]);
+    }, [setLoading, getReports, setReports, showAlert, showDeleted, t]);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -79,7 +81,7 @@ const ReportsPage = () => {
             }
         } catch (err) {
             console.error(err);
-            showAlert("रिपोर्ट बनाने में समस्या हुई", "error");
+            showAlert(t("reports.reportCreateError"), "error");
         } finally {
             setLoading(false);
         }
@@ -116,7 +118,7 @@ const ReportsPage = () => {
                     <FiUsers className="reports-profile-icon" />}
             </div>
 
-            <h2 className="reports-title">आपके खर्चे की सूचि</h2>
+            <h2 className="reports-title">{t("reports.title")}</h2>
 
             <div className="reports-list-container">
                 <div className="reports-list">
@@ -136,17 +138,17 @@ const ReportsPage = () => {
 
                                     {isShared(report, user?.email) && (
                                         <span className="shared-badge">
-                                            <FiShare2 size={14} /> साझा
+                                            <FiShare2 size={14} /> {t("reports.sharedBadge")}
                                         </span>
                                     )}
                                 </div>
 
                                 <div className="report-info">
                                     <p className="report-budget">
-                                        बजट : ₹{report.budget.toLocaleString()}
+                                        {t("reports.budgetLabel")} : ₹{report.budget.toLocaleString()}
                                     </p>
                                     <p className="report-spent">
-                                        खर्चा : ₹{calculateAmountSpent(report).toLocaleString()}
+                                        {t("reports.spentLabel")} : ₹{calculateAmountSpent(report).toLocaleString()}
                                     </p>
                                 </div>
 
@@ -162,8 +164,8 @@ const ReportsPage = () => {
                     {reports.length === 0 &&
                         <div className="no-reports-container">
                             <FiFileText size={48} className="no-reports-icon" />
-                            <p className="no-reports-text">अभी कोई रिपोर्ट नहीं है</p>
-                            <p className="no-reports-subtext">नई रिपोर्ट बनाने के लिए नीचे का बटन दबाएँ</p>
+                            <p className="no-reports-text">{t("reports.noReports")}</p>
+                            <p className="no-reports-subtext">{t("reports.noReportsSubtext")}</p>
                         </div>}
                 </div>
             </div>
@@ -176,9 +178,9 @@ const ReportsPage = () => {
             {/* Modal */}
             {isModalOpen && (
                 <AmountModalInput
-                    header="नई रिपोर्ट जोड़ें"
-                    titlePlaceholder="रिपोर्ट का नाम"
-                    amountPlaceholder="बजट राशि"
+                    header={t("reports.addReportHeader")}
+                    titlePlaceholder={t("reports.titlePlaceholder")}
+                    amountPlaceholder={t("reports.amountPlaceholder")}
                     onReject={() => setIsModalOpen(false)}
                     onAccept={handleAddReport}
                 />

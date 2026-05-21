@@ -17,10 +17,12 @@ import { isShared, isOwner, getRemainingDays, calculateAmountSpent, calculateTop
 import { type User } from "firebase/auth";
 import EditExpense from "./EditExpense";
 import ExpenseRow from "./ExpenseRow";
+import { useTranslation } from "../i18n/locale";
 
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
     const { alert, showAlert } = useAlert();
+    const { t, locale } = useTranslation();
     const navigate = useNavigate();
 
     const [user, setUser] = useState<User | null>(null);
@@ -44,7 +46,7 @@ const ReportDetailsPage = () => {
                 const fetched = await getReport(reportId);
 
                 if (!fetched) {
-                    showAlert("रिपोर्ट नहीं मिली", "error");
+                    showAlert(t("reportDetails.reportNotFound"), "error");
                     setReport(null);
                     return;
                 }
@@ -53,7 +55,7 @@ const ReportDetailsPage = () => {
                     fetched.owner !== user.email &&
                     !fetched.sharedWith?.includes(user.email)
                 ) {
-                    showAlert("आपको इस रिपोर्ट को देखने की अनुमति नहीं है", "error");
+                    showAlert(t("reportDetails.noPermission"), "error");
                     setReport(null);
                     return;
                 }
@@ -61,22 +63,22 @@ const ReportDetailsPage = () => {
                 setReport(fetched);
             } catch (error) {
                 console.error(error);
-                showAlert("रिपोर्ट लाने में समस्या हुई", "error");
+                showAlert(t("reportDetails.loadError"), "error");
             } finally {
                 setLoading(false);
             }
         });
 
         return () => unsubscribe();
-    }, [reportId]);
+    }, [reportId, showAlert, t]);
 
     const createExpenseHelper = useCallback(async (title: string, amount: number, label: string) => {
         if (!user || !user.email || !user.displayName) {
-            showAlert("खर्चे के मालिक की जानकारी नहीं है", "error");
+            showAlert(t("reportDetails.ownerMissing"), "error");
             return;
         }
         if (!reportId) {
-            showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+            showAlert(t("reportDetails.reportIdMissing"), "error");
             return;
         }
 
@@ -90,36 +92,34 @@ const ReportDetailsPage = () => {
                 authorDisplayName: user.displayName
             });
 
-            // Refetch updated report
             const updated = await getReport(reportId);
             if (updated) setReport(updated);
 
             setOpenExpenseModal(false);
-            showAlert(`${label} सफलतापूर्वक जोड़ दिया गया`, "success");
+            showAlert(t("reportDetails.addSuccess", { label }), "success");
         } catch (err) {
             console.error(err);
-            showAlert(`${label} जोड़ने में समस्या हुई`, "error");
+            showAlert(t("reportDetails.addError", { label }), "error");
         } finally {
             setLoading(false);
         }
-    }, [reportId, showAlert, user]);
+    }, [reportId, showAlert, user, t]);
 
-    const handleAddExpense = useCallback(async (title: string, amount: number) => await createExpenseHelper(title, -1 * Math.abs(amount), "खर्चा"), [createExpenseHelper]);
-    const handleTopup = useCallback(async (amount: number) => await createExpenseHelper("टॉप उप", Math.abs(amount), "टॉप उप"), [createExpenseHelper]);
+    const handleAddExpense = useCallback(async (title: string, amount: number) => await createExpenseHelper(title, -1 * Math.abs(amount), t("reportDetails.expenseLabel")), [createExpenseHelper, t]);
+    const handleTopup = useCallback(async (amount: number) => await createExpenseHelper(t("reportDetails.action.topup"), Math.abs(amount), t("reportDetails.action.topup")), [createExpenseHelper, t]);
 
-    // Utility method for adding/removing emails
     const manageEmailShare = useCallback(async (
         email: string,
         action: "add" | "remove",
         successLabel: string
     ) => {
         if (!reportId) {
-            showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+            showAlert(t("reportDetails.reportIdMissing"), "error");
             return;
         }
 
         if (!email || !email.includes("@")) {
-            showAlert("कृपया एक मान्य ईमेल दर्ज करें", "error");
+            showAlert(t("reportDetails.invalidEmail"), "error");
             return;
         }
 
@@ -128,89 +128,81 @@ const ReportDetailsPage = () => {
             if (action === "add") await shareReport(reportId, email);
             else await unshareReport(reportId, email);
 
-            // Refresh report
             const updated = await getReport(reportId);
             if (updated) setReport(updated);
 
-            showAlert(`${successLabel} सफलतापूर्वक हो गया`, "success");
+            showAlert(t("reportDetails.addSuccess", { label: successLabel }), "success");
         } catch (err) {
             console.error(err);
-            showAlert(`ईमेल ${successLabel.toLowerCase()} में समस्या हुई`, "error");
+            showAlert(t("reportDetails.emailActionError", { action: successLabel }), "error");
         } finally {
             setLoading(false);
         }
-    }, [reportId, showAlert, getReport, shareReport, unshareReport]);
+    }, [reportId, showAlert, t]);
 
     const handleAddEmail = useCallback(async (email: string) =>
-        await manageEmailShare(email, "add", "शेयर"), [manageEmailShare]);
+        await manageEmailShare(email, "add", t("reportDetails.action.add")), [manageEmailShare]);
     const handleRemoveEmail = useCallback(async (email: string) =>
-        await manageEmailShare(email, "remove", "अनशेयर"), [manageEmailShare]);
-
+        await manageEmailShare(email, "remove", t("reportDetails.action.remove")), [manageEmailShare]);
 
     const handleEditExpense = useCallback(async (title: string, amount: number) => {
         try {
             if (!reportId) {
-                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                showAlert(t("reportDetails.reportIdMissing"), "error");
                 return;
             }
             if (!selectedExpenseId) {
-                showAlert("खर्चे की आईडी उपलब्ध नहीं है", "error");
+                showAlert(t("reportDetails.invalidExpenseId"), "error");
                 return;
-
             }
 
-            // Update expense
             setLoading(true);
             await updateExense({ reportId, expenseId: selectedExpenseId, title, amount });
 
-            // Refresh report
             const updated = await getReport(reportId);
             if (updated) setReport(updated);
 
-            showAlert("खर्चा सफलता पूर्वक बदला गया", "success");
+            showAlert(t("reportDetails.editSuccess"), "success");
         } catch (err) {
             console.log(err);
-            showAlert("खर्चा बदलने में समस्या हुई", "error");
+            showAlert(t("reportDetails.editError"), "error");
         } finally {
             setSelectedExpenseId(null);
             setLoading(false);
         }
-    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, getReport, setReport, showAlert]);
+    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, t]);
 
     const handleDeleteExpense = useCallback(async () => {
         try {
             if (!reportId) {
-                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                showAlert(t("reportDetails.reportIdMissing"), "error");
                 return;
             }
             if (!selectedExpenseId) {
-                showAlert("खर्चे की आईडी उपलब्ध नहीं है", "error");
+                showAlert(t("reportDetails.invalidExpenseId"), "error");
                 return;
-
             }
 
-            // Delete expense
             setLoading(true);
             await deleteExpense(reportId, selectedExpenseId);
 
-            // Refresh report
             const updated = await getReport(reportId);
             if (updated) setReport(updated);
 
-            showAlert("खर्चा सफलता पूर्वक हटाया गया", "success");
+            showAlert(t("reportDetails.deleteSuccess"), "success");
         } catch (err) {
             console.log(err);
-            showAlert("खर्चा हटाने में समस्या हुई", "error");
+            showAlert(t("reportDetails.deleteError"), "error");
         } finally {
             setSelectedExpenseId(null);
             setLoading(false);
         }
-    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, deleteExpense]);
+    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, t]);
 
     const handleDeleteReport = async () => {
         try {
             if (!reportId) {
-                showAlert("रिपोर्ट आईडी उपलब्ध नहीं है", "error");
+                showAlert(t("reportDetails.reportIdMissing"), "error");
                 return;
             }
 
@@ -219,7 +211,7 @@ const ReportDetailsPage = () => {
             navigate("/reports");
         } catch (err) {
             console.log(err);
-            showAlert("रिपोर्ट हटाने में समस्या हुई", "error");
+            showAlert(t("reportDetails.reportDeleteError"), "error");
         } finally {
             setLoading(false);
         }
@@ -237,10 +229,12 @@ const ReportDetailsPage = () => {
         <div className="report-details-container">
             <Alert alert={alert} />
             <Loader visible={loading} />
-            <Link to="/reports" className="back-button">
-                <FiArrowLeft size={20} />
-                <span>वापस जाएँ</span>
-            </Link>
+            <div className="report-header-row">
+                <Link to="/reports" className="back-button">
+                    <FiArrowLeft size={20} />
+                    <span>{t("reportDetails.back")}</span>
+                </Link>
+            </div>
             {isOwner(report, user?.email) && !report.deleted &&
                 <ReportHamburgerMenu
                     sharedWith={report.sharedWith}
@@ -251,31 +245,31 @@ const ReportDetailsPage = () => {
                 />}
 
             {report.deletedAt && <p className="deleted-message">
-                यह रिपोर्ट सॉफ्ट-डिलीटेड है और {getRemainingDays(report.deletedAt)} दिन में स्थायी रूप से हट जाएगी।</p>}
+                {t("reportDetails.deletedMessage", { days: getRemainingDays(report.deletedAt) })}</p>}
 
             <div className="report-header">
                 <h2 className="report-title">{report.title}</h2>
                 {isShared(report, user?.email) && (
                     <span className="shared-badge">
-                        <FiShare2 size={16} /> साझा
+                        <FiShare2 size={16} /> {t("reports.sharedBadge")}
                     </span>
                 )}
             </div>
 
             <div className="report-summary">
                 <div className="chips-container">
-                    <span className="chip">बजट: ₹{report.budget.toLocaleString()}</span>
-                    <span className="chip spent">खर्च: ₹{spentAmount.toLocaleString()}</span>
-                    <span className="chip remaining">शेष: ₹{remainingBudget.toLocaleString()}</span>
-                    <span className="chip date">निर्मित: {new Date(report.createdAt).toLocaleDateString("hi-IN")}</span>
-                    <span className="chip topup">टॉप उप: {topupAmount}</span>
+                    <span className="chip">{t("reportDetails.budgetChip", { amount: report.budget.toLocaleString() })}</span>
+                    <span className="chip spent">{t("reportDetails.spentChip", { amount: spentAmount.toLocaleString() })}</span>
+                    <span className="chip remaining">{t("reportDetails.remainingChip", { amount: remainingBudget.toLocaleString() })}</span>
+                    <span className="chip date">{t("reportDetails.createdChip", { date: new Date(report.createdAt).toLocaleDateString(locale === "hi" ? "hi-IN" : "en-US") })}</span>
+                    <span className="chip topup">{t("reportDetails.topupChip", { amount: topupAmount.toLocaleString() })}</span>
                 </div>
             </div>
 
             <div className="expenses-title">
-                खर्चों की सूची
+                {t("reportDetails.expensesTitle")}
                 {canActOnExpense && <div className="expense-note">
-                    (खर्चे में बदलाव करने के लिए खर्च पर लंबे समय तक दबाएँ)
+                    {t("reportDetails.expensesNote")}
                 </div>}
             </div>
 
@@ -290,10 +284,9 @@ const ReportDetailsPage = () => {
                 {report.expenses.length === 0 &&
                     <div className="no-reports-container">
                         <FiFileText size={48} className="no-reports-icon" />
-                        <p className="no-reports-text">अभी कोई खर्चा नहीं जोड़ा गया</p>
-                        <p className="no-reports-subtext">नया खर्चा जोड़ने के लिए नीचे का बटन दबाएँ</p>
+                        <p className="no-reports-text">{t("reportDetails.noExpenses")}</p>
+                        <p className="no-reports-subtext">{t("reportDetails.noExpensesSubtext")}</p>
                     </div>}
-
             </div>
 
             {!report.deleted && <button
@@ -305,9 +298,9 @@ const ReportDetailsPage = () => {
 
             {openExpenseModal &&
                 <AmountModalInput
-                    header="नया ख़र्च जोड़ें"
-                    titlePlaceholder="ख़र्च का नाम"
-                    amountPlaceholder="खर्च की राशि"
+                    header={t("reportDetails.addExpenseHeader")}
+                    titlePlaceholder={t("reportDetails.expenseNamePlaceholder")}
+                    amountPlaceholder={t("reportDetails.expenseAmountPlaceholder")}
                     onReject={() => setOpenExpenseModal(false)}
                     onAccept={handleAddExpense}
                 />

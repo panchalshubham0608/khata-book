@@ -2,6 +2,7 @@ import React from "react";
 import { FiMenu, FiLogOut } from "react-icons/fi";
 import "./ReportsHamburger.css";
 import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
+import { useTranslation } from "../i18n/locale";
 
 interface ReportsHamburgerProps {
     showDeleted: boolean;
@@ -16,21 +17,23 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     showContacts,
     handleLogout,
 }) => {
+    const { t } = useTranslation();
+
     const reportsMenuItems: HamburgerItem[] = [
         {
             key: "showDeleted",
-            label: "हटाए गए रिपोर्ट दिखाएँ",
+            label: t("reports.showDeletedReports"),
             ticked: showDeleted,
             onClick: toggleShowDeleted,
         },
         {
             key: "contacts",
-            label: "कॉन्टेक्ट्स",
+            label: t("reports.contacts"),
             onClick: showContacts,
         },
         {
             key: "logout",
-            label: "लॉगआउट",
+            label: t("reports.logout"),
             icon: <FiLogOut />,
             destructive: true,
             onClick: handleLogout,
