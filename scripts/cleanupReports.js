@@ -68,6 +68,7 @@ async function runCleanup() {
 
     for (const reportDoc of querySnapshot.docs) {
         const reportId = reportDoc.id;
+        const reportTitle = reportDoc.data().title || "Untitled";
         const expenseCount = await countExpenses(reportId);
         expenseDeletes += expenseCount;
 
@@ -75,9 +76,9 @@ async function runCleanup() {
             await deleteExpenses(reportId);
             await reportDoc.ref.delete();
             deletedCount += 1;
-            console.log(`Deleted report ${reportId} and ${expenseCount} expense(s).`);
+            console.log(`Deleted report (${reportId}, ${reportTitle}) and ${expenseCount} expense(s).`);
         } else {
-            console.log(`Dry run: report ${reportId} would be deleted, with ${expenseCount} expense(s) to remove.`);
+            console.log(`Dry run: report (${reportId}, ${reportTitle}) would be deleted, with ${expenseCount} expense(s) to remove.`);
         }
     }
 
