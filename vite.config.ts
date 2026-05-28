@@ -47,13 +47,13 @@ export default defineConfig({
         const key = fs.readFileSync(path.resolve(keyPath));
         const cert = fs.readFileSync(path.resolve(certPath));
         return { host: true, https: { key, cert } };
-      } catch (err) {
+        } catch (err) {
         console.warn('DEV_HTTPS is enabled but failed to read cert/key files, falling back to https: true', err);
-        return { host: true, https: true };
+        return { host: true, https: {} };
       }
     }
 
     // Let Vite use its default self-signed/https behaviour
-    return { host: true, https: true };
+    return { host: true, https: {} };
   })(),
 })
