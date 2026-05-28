@@ -8,8 +8,9 @@ import ReportHamburgerMenu from "./ReportDetailsHamburger";
 import "./ReportDetailsPage.css";
 import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
-import type { Report } from "../firebase/types";
+import type { Report, Category } from "../firebase/types";
 import { createExpense, deleteExpense, deleteReport, getReport, shareReport, unshareReport, updateExense } from "../firebase/reportService";
+import { getCategories } from "../firebase/categoryService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
@@ -32,6 +33,7 @@ const ReportDetailsPage = () => {
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+    const [categoryMap, setCategoryMap] = useState<Record<string, Category>>({});
 
     useEffect(() => {
         if (!reportId) return;
@@ -73,6 +75,27 @@ const ReportDetailsPage = () => {
 
         return () => unsubscribe();
     }, [reportId, showAlert, t]);
+
+    useEffect(() => {
+        let mounted = true;
+        if (!user) return;
+
+        (async () => {
+            try {
+                const categories = await getCategories();
+                if (!mounted) return;
+                const map: Record<string, Category> = {};
+                categories.forEach((category) => {
+                    map[category.id] = category;
+                });
+                setCategoryMap(map);
+            } catch (err) {
+                console.error(err);
+            }
+        })();
+
+        return () => { mounted = false; };
+    }, [user]);
 
     const createExpenseHelper = useCallback(async (title: string, amount: number, label: string, categories?: string[]) => {
         if (!user || !user.email || !user.displayName) {
@@ -228,16 +251,52 @@ const ReportDetailsPage = () => {
         return () => window.clearTimeout(handler);
     }, [searchTerm]);
 
+    const parseSearchQuery = (query: string) => {
+        const tokens = query.trim().split(/\s+/).filter(Boolean);
+        const categoryTerms: string[] = [];
+        const textTerms: string[] = [];
+
+        tokens.forEach((token) => {
+            const match = token.match(/^c[:=](.+)$/i);
+            if (match?.[1]) {
+                categoryTerms.push(match[1].toLowerCase());
+            } else {
+                textTerms.push(token.toLowerCase());
+            }
+        });
+
+        return {
+            categoryTerms,
+            text: textTerms.join(" "),
+        };
+    };
+
     const filteredExpenses = useMemo(() => {
         if (!report) return [];
         if (!debouncedSearchTerm) return report.expenses;
-        return report.expenses.filter((expense) =>
-            expense.title.toLowerCase().includes(debouncedSearchTerm) ||
-            expense.authorDisplayName.toLowerCase().includes(debouncedSearchTerm) ||
-            expense.authorEmail.toLowerCase().includes(debouncedSearchTerm) ||
-            expense.amount.toString().includes(debouncedSearchTerm)
-        );
-    }, [report, debouncedSearchTerm]);
+
+        const { categoryTerms, text } = parseSearchQuery(debouncedSearchTerm);
+
+        return report.expenses.filter((expense) => {
+            const categoryNames = (expense.categories || []).map((categoryId) => {
+                return categoryMap[categoryId]?.name?.toLowerCase() ?? categoryId.toLowerCase();
+            });
+
+            const categoryMatch = categoryTerms.length === 0 || categoryTerms.every((term) =>
+                categoryNames.some((name) => name.includes(term))
+            );
+
+            const textMatch = !text || [
+                expense.title.toLowerCase(),
+                expense.authorDisplayName.toLowerCase(),
+                expense.authorEmail.toLowerCase(),
+                expense.amount.toString(),
+                ...categoryNames,
+            ].some((value) => value.includes(text));
+
+            return categoryMatch && textMatch;
+        });
+    }, [report, debouncedSearchTerm, categoryMap]);
 
     const filteredTotals = useMemo(() => {
         return filteredExpenses.reduce(
@@ -333,7 +392,7 @@ const ReportDetailsPage = () => {
 
             <div className="expenses-list">
                 {filteredExpenses.map((expense) => (
-                    <ExpenseRow key={expense.id} expense={expense} onAction={() => {
+                    <ExpenseRow key={expense.id} expense={expense} categoryMap={categoryMap} onAction={() => {
                         if (canActOnExpense && !expense.deleted) {
                             setSelectedExpenseId(expense.id)
                         }

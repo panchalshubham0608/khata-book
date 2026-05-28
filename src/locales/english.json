@@ -32,7 +32,7 @@
   "reportDetails.filteredTopupChip": "Top-up: ₹{amount}",
   "reportDetails.expensesTitle": "Expense list",
   "reportDetails.expensesNote": "(Long press an expense to edit it)",
-  "reportDetails.searchPlaceholder": "Search expenses",
+  "reportDetails.searchPlaceholder": "Search expenses, e.g. c:transport",
   "reportDetails.noExpenses": "No expenses have been added yet.",
   "reportDetails.noExpensesSubtext": "Tap the button below to add a new expense.",
   "reportDetails.noMatchingExpenses": "No expenses matched your search.",

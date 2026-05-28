@@ -32,7 +32,7 @@
   "reportDetails.filteredTopupChip": "टॉप उप: ₹{amount}",
   "reportDetails.expensesTitle": "खर्चों की सूची",
   "reportDetails.expensesNote": "(खर्चे में बदलाव करने के लिए खर्च पर लंबे समय तक दबाएँ)",
-  "reportDetails.searchPlaceholder": "खर्चों में खोजें",
+  "reportDetails.searchPlaceholder": "खर्चों में खोजें, जैसे c:ट्रांसपोर्ट",
   "reportDetails.noExpenses": "अभी कोई खर्चा नहीं जोड़ा गया",
   "reportDetails.noExpensesSubtext": "नया खर्चा जोड़ने के लिए नीचे का बटन दबाएँ",
   "reportDetails.noMatchingExpenses": "आपकी खोज से कोई खर्चा मेल नहीं खाता।",
