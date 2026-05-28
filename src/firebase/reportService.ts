@@ -69,10 +69,11 @@ interface CreateExpenseOptions {
   expenseAmount: number; // positive = topup, negative = debit
   authorEmail: string;
   authorDisplayName: string;
+  categories?: string[];
 }
 
 export async function createExpense(options: CreateExpenseOptions) {
-  const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName } = options;
+  const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName, categories } = options;
 
   const expensesRef = collection(db, "reports", reportId, "expenses");
 
@@ -83,6 +84,7 @@ export async function createExpense(options: CreateExpenseOptions) {
     createdAt: new Date().toISOString(),
     authorEmail,
     authorDisplayName,
+    categories: categories || [],
   };
 
   const expenseRef = await addDoc(expensesRef, {

@@ -8,6 +8,7 @@ interface ReportsHamburgerProps {
     showDeleted: boolean;
     toggleShowDeleted: () => void;
     showContacts: () => void;
+    showCategories: () => void;
     handleLogout: () => void;
 }
 
@@ -15,6 +16,7 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     showDeleted,
     toggleShowDeleted,
     showContacts,
+    showCategories,
     handleLogout,
 }) => {
     const { t } = useTranslation();
@@ -25,6 +27,11 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
             label: t("reports.showDeletedReports"),
             ticked: showDeleted,
             onClick: toggleShowDeleted,
+        },
+        {
+            key: "categories",
+            label: t("reports.categories"),
+            onClick: showCategories,
         },
         {
             key: "contacts",

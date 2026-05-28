@@ -102,6 +102,7 @@
 .expense-item {
     border-bottom: 1px solid #e0e0e0;
     display: flex;
+    gap: 12px;
     justify-content: space-between;
 }
 
@@ -199,6 +200,24 @@
     border-radius: 8px;
     font-size: 16px;
     margin: 8px 0;
+}
+
+.expense-categories {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+    margin-bottom: 8px;
+}
+
+.expense-category-chip {
+    padding: 4px 8px;
+    border-radius: 9px;
+    font-size: 12px;
+    border: 1px solid transparent;
+    display: inline-block;
+    height: fit-content;
+
 }
 
 /* Floating Add Button */
