@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiMoreVertical, FiTrash2, FiUsers, FiPlusCircle } from "react-icons/fi";
+import { FiMoreVertical, FiTrash2, FiUsers, FiPlusCircle, FiUploadCloud } from "react-icons/fi";
 import ConfirmDialog from "./ConfirmDialog";
 import ManageAccessPopup from "./ManageAccessPopup";
 import AmountModalInput from "./AmountModalInput";
@@ -12,6 +12,7 @@ interface ReportHamburgerMenuProps {
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
   onTopup?: (amount: number) => void;
+  onBackup?: () => void;
 }
 
 const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
@@ -20,6 +21,7 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   onRemoveEmail,
   onDeleteReport,
   onTopup,
+  onBackup,
 }) => {
   const { t } = useTranslation();
   const [showDeleteReportDialog, setShowDeleteReportDialog] = useState<boolean>(false);
@@ -38,6 +40,12 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
       label: t("reportHamburger.topup"),
       icon: <FiPlusCircle size={16} />,
       onClick: () => setShowTopupInput(true),
+    },
+    {
+      key: "backup",
+      label: t("reportHamburger.backup"),
+      icon: <FiUploadCloud size={16} />,
+      onClick: () => onBackup?.(),
     },
     {
       key: "deleteReport",

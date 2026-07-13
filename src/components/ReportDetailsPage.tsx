@@ -15,6 +15,7 @@ import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
 import { isShared, isOwner, getRemainingDays, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
+import { backupReportToGoogleSheets } from "../utils/googleBackup";
 import { type User } from "firebase/auth";
 import EditExpense from "./EditExpense";
 import ExpenseRow from "./ExpenseRow";
@@ -243,6 +244,24 @@ const ReportDetailsPage = () => {
         }
     };
 
+    const handleBackup = useCallback(async () => {
+        if (!report) {
+            showAlert(t("reportDetails.backupUnavailable"), "error");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await backupReportToGoogleSheets(report);
+            showAlert(t("reportDetails.backupSuccess"), "success");
+        } catch (error) {
+            console.error(error);
+            showAlert(t("reportDetails.backupError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [report, showAlert, t]);
+
     useEffect(() => {
         const handler = window.setTimeout(() => {
             setDebouncedSearchTerm(searchTerm.trim().toLowerCase());
@@ -337,6 +356,7 @@ const ReportDetailsPage = () => {
                     onRemoveEmail={handleRemoveEmail}
                     onDeleteReport={handleDeleteReport}
                     onTopup={handleTopup}
+                    onBackup={handleBackup}
                 />}
 
             {report.deletedAt && <p className="deleted-message">

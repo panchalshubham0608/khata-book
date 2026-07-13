@@ -98,5 +98,9 @@ export default defineConfig({
 - Commit changes
 - Open a pull request
 
+# 📄 Legal
+- [Privacy Policy](PRIVACY_POLICY.md)
+- [Terms and Conditions](TERMS_AND_CONDITIONS.md)
+
 # 📄 License
 MIT License.
