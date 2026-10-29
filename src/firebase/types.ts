@@ -36,3 +36,5 @@ export interface Category {
     name: string;           // Category name
     createdAt: string;      // Timestamp when category was created
 }
+
+

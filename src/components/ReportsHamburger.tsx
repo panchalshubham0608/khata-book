@@ -7,6 +7,8 @@ import { useTranslation } from "../i18n/locale";
 interface ReportsHamburgerProps {
     showDeleted: boolean;
     toggleShowDeleted: () => void;
+    smsTrackingEnabled: boolean;
+    toggleSmsTracking: () => void;
     showContacts: () => void;
     showCategories: () => void;
     handleLogout: () => void;
@@ -15,6 +17,8 @@ interface ReportsHamburgerProps {
 const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     showDeleted,
     toggleShowDeleted,
+    smsTrackingEnabled,
+    toggleSmsTracking,
     showContacts,
     showCategories,
     handleLogout,
@@ -27,6 +31,12 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
             label: t("reports.showDeletedReports"),
             ticked: showDeleted,
             onClick: toggleShowDeleted,
+        },
+        {
+            key: "smsTracking",
+            label: t("reports.trackSmsTransactions"),
+            ticked: smsTrackingEnabled,
+            onClick: toggleSmsTracking,
         },
         {
             key: "categories",

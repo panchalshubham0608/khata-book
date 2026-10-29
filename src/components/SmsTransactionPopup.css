@@ -1,0 +1,469 @@
+.sms-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 300;
+    padding: 16px;
+}
+
+.sms-popup-container {
+    background: #ffffff;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-sizing: border-box;
+    animation: sms-popup-appear 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Top bar */
+.sms-popup-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.sms-popup-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sms-popup-icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sms-popup-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.sms-popup-subtitle {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.sms-popup-skip-top {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sms-popup-skip-top:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* Summary Bar */
+.sms-popup-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 10px;
+}
+
+.sms-summary-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.sms-summary-pill.debit {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.sms-summary-pill.credit {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.sms-summary-pill-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.sms-summary-pill.debit .sms-summary-pill-icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.sms-summary-pill.credit .sms-summary-pill-icon {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.sms-summary-pill-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.sms-summary-pill-count {
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.sms-summary-pill-amount {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+/* Progress dots */
+.sms-popup-progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sms-popup-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sms-popup-dot {
+    height: 6px;
+    width: 18px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.sms-popup-dot.active {
+    width: 28px;
+    background: #2563eb;
+}
+
+.sms-popup-dot.done {
+    background: #93c5fd;
+}
+
+.sms-popup-step-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* Transaction Hero Card */
+.sms-popup-card {
+    border-radius: 14px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sms-popup-card.debit {
+    background: linear-gradient(180deg, #fff5f5 0%, #ffffff 100%);
+    border-color: #fecaca;
+}
+
+.sms-popup-card.credit {
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+    border-color: #bbf7d0;
+}
+
+.sms-popup-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sms-popup-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.sms-popup-badge.debit {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.sms-popup-badge.credit {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.sms-popup-amount {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.sms-popup-amount.debit {
+    color: #dc2626;
+}
+
+.sms-popup-amount.credit {
+    color: #16a34a;
+}
+
+.sms-popup-message-box {
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: #334155;
+    max-height: 84px;
+    overflow-y: auto;
+    line-height: 1.45;
+}
+
+.sms-popup-sender-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.sms-popup-sender {
+    font-weight: 700;
+    font-size: 11.5px;
+    color: #1e293b;
+}
+
+.sms-popup-time {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* Inputs */
+.sms-popup-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sms-popup-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.sms-popup-input,
+.sms-popup-select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    box-sizing: border-box;
+    background: #fff;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sms-popup-input:focus,
+.sms-popup-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.sms-popup-single-report {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #1e3a8a;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.sms-popup-single-report strong {
+    font-weight: 700;
+}
+
+/* Footer Buttons */
+.sms-popup-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+.sms-popup-btn {
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.sms-popup-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sms-popup-btn-dismiss {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.sms-popup-btn-dismiss:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.sms-popup-btn-add {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.sms-popup-btn-add:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+/* Batch Review & Confirm View */
+.sms-review-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sms-review-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sms-review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.sms-review-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.sms-review-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.sms-review-item-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sms-review-item-report {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #2563eb;
+}
+
+.sms-review-item-amount {
+    font-size: 15px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.sms-review-item-amount.debit {
+    color: #dc2626;
+}
+
+.sms-review-item-amount.credit {
+    color: #16a34a;
+}
+
+.sms-review-empty {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.5;
+}
+
+@keyframes sms-popup-appear {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+

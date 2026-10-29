@@ -8,7 +8,8 @@ import {
   query,
   where,
   arrayRemove,
-  arrayUnion
+  arrayUnion,
+  writeBatch
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import type { Expense, Report } from "./types";
@@ -63,7 +64,7 @@ export async function unshareReport(reportId: string, email: string) {
   });
 }
 
-interface CreateExpenseOptions {
+export interface CreateExpenseOptions {
   reportId: string;
   expenseTitle: string;
   expenseAmount: number; // positive = topup, negative = debit
@@ -93,6 +94,38 @@ export async function createExpense(options: CreateExpenseOptions) {
   });
 
   return expenseRef.id;
+}
+
+export async function createExpensesBatch(items: CreateExpenseOptions[]): Promise<string[]> {
+  if (items.length === 0) return [];
+
+  const batch = writeBatch(db);
+  const createdIds: string[] = [];
+
+  for (const options of items) {
+    const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName, categories } = options;
+    const expensesRef = collection(db, "reports", reportId, "expenses");
+    const newExpenseDocRef = doc(expensesRef);
+
+    const expenseData: Omit<Expense, "id"> = {
+      title: expenseTitle,
+      amount: expenseAmount,
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      authorEmail,
+      authorDisplayName,
+      categories: categories || [],
+    };
+
+    batch.set(newExpenseDocRef, {
+      ...expenseData,
+      createdAt: Date.now(),
+    });
+    createdIds.push(newExpenseDocRef.id);
+  }
+
+  await batch.commit();
+  return createdIds;
 }
 
 interface UpdateExpenseOptions {

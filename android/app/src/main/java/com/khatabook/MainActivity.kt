@@ -1,5 +1,7 @@
 package com.khatabook
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.webkit.WebChromeClient
@@ -8,6 +10,8 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
 
@@ -19,6 +23,12 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
     private lateinit var googleAuthManager: GoogleAuthManager
+    private lateinit var smsReader: SmsReader
+
+    private val requestSmsPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            sendSmsPermissionResult(isGranted)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,8 +36,19 @@ class MainActivity : ComponentActivity() {
         WebView.setWebContentsDebuggingEnabled(true)
 
         googleAuthManager = GoogleAuthManager(this)
+        smsReader = SmsReader(this)
 
         setupWebView()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::webView.isInitialized) {
+            webView.evaluateJavascript(
+                """window.dispatchEvent(new CustomEvent("nativeAppResumed"));""",
+                null
+            )
+        }
     }
 
     private fun setupWebView() {
@@ -116,11 +137,15 @@ class MainActivity : ComponentActivity() {
          * React can call:
          *
          * window.Android.signInWithGoogle()
+         * window.Android.hasSmsPermission()
+         * window.Android.requestSmsPermission()
+         * window.Android.getSmsMessages(sinceTimestampMillis)
          */
         webView.addJavascriptInterface(
             AndroidBridge(
                 this,
-                googleAuthManager
+                googleAuthManager,
+                smsReader
             ),
             "Android"
         )
@@ -133,6 +158,43 @@ class MainActivity : ComponentActivity() {
         )
 
         setContentView(webView)
+    }
+
+    fun hasSmsPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun requestSmsPermission() {
+        if (hasSmsPermission()) {
+            sendSmsPermissionResult(true)
+            return
+        }
+        requestSmsPermissionLauncher.launch(Manifest.permission.READ_SMS)
+    }
+
+    fun sendSmsPermissionResult(granted: Boolean) {
+        val javascript = """
+            window.dispatchEvent(
+                new CustomEvent(
+                    "nativeSmsPermissionResult",
+                    {
+                        detail: {
+                            granted: $granted
+                        }
+                    }
+                )
+            );
+        """.trimIndent()
+
+        runOnUiThread {
+            webView.evaluateJavascript(
+                javascript,
+                null
+            )
+        }
     }
 
     /**

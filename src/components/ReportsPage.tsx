@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { FiShare2, FiPlus, FiUsers, FiFileText } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
@@ -6,7 +6,7 @@ import { signOut, type User } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import "./ReportsPage.css";
 import type { Report } from "../firebase/types";
-import { createReport, getReports } from "../firebase/reportService";
+import { createExpensesBatch, createReport, getReports } from "../firebase/reportService";
 import Categories from "./Categories";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
@@ -14,6 +14,15 @@ import Loader from "./Loader";
 import { isShared, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 import Contacts from "./Contacts";
+import SmsTransactionPopup from "./SmsTransactionPopup";
+import {
+    isSmsTrackingEnabled,
+    markSmsProcessedBatch,
+    scanUnprocessedSmsTransactions,
+    setSmsTrackingEnabled,
+    type PendingSmsTransaction,
+    type StagedApprovedSmsTransaction,
+} from "../services/smsTrackingService";
 import { useTranslation } from "../i18n/locale";
 
 const ReportsPage = () => {
@@ -26,10 +35,17 @@ const ReportsPage = () => {
         const stored = localStorage.getItem("showDeleted");
         return stored === "true"; // converts string "true" to boolean true, everything else is false
     });
+    const [smsTrackingEnabled, setSmsTrackingEnabledState] = useState<boolean>(false);
+    const [pendingSmsQueue, setPendingSmsQueue] = useState<PendingSmsTransaction[]>([]);
     const [showContacts, setShowContacts] = useState(false);
     const [showCategories, setShowCategories] = useState(false);
     const { alert, showAlert } = useAlert();
     const { t } = useTranslation();
+
+    const activeReports = useMemo(
+        () => reports.filter((r) => !r.deleted),
+        [reports]
+    );
 
     const fetchReports = useCallback(async (email: string) => {
         try {
@@ -42,13 +58,24 @@ const ReportsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [setLoading, getReports, setReports, showAlert, showDeleted, t]);
+    }, [showAlert, showDeleted, t]);
+
+    const runSmsScan = useCallback(async (email: string, includeDummyOnLoad = false) => {
+        if (!includeDummyOnLoad && !isSmsTrackingEnabled(email)) return;
+        const detected = await scanUnprocessedSmsTransactions(email, includeDummyOnLoad);
+        if (detected.length > 0) {
+            setPendingSmsQueue(detected);
+        }
+    }, []);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (user?.email) {
-                setUser(user);
-                fetchReports(user.email);
+        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+            if (currentUser?.email) {
+                setUser(currentUser);
+                const enabled = isSmsTrackingEnabled(currentUser.email);
+                setSmsTrackingEnabledState(enabled);
+                fetchReports(currentUser.email);
+                runSmsScan(currentUser.email, true);
             } else {
                 setReports([]);
                 setLoading(false);
@@ -56,11 +83,52 @@ const ReportsPage = () => {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [fetchReports, runSmsScan]);
 
     useEffect(() => {
-        if (user?.email) fetchReports(user.email);
-    }, [user, fetchReports]);
+        if (!user?.email) return;
+        const email = user.email;
+
+        const handlePermissionResult = (event: Event) => {
+            const customEvent = event as CustomEvent<{ granted: boolean }>;
+            if (customEvent.detail?.granted) {
+                setSmsTrackingEnabled(email, true);
+                setSmsTrackingEnabledState(true);
+                showAlert(t("smsPopup.permissionGranted"), "success");
+                runSmsScan(email);
+            } else {
+                setSmsTrackingEnabled(email, false);
+                setSmsTrackingEnabledState(false);
+                showAlert(t("smsPopup.permissionDenied"), "error");
+            }
+        };
+
+        const handleAppResumed = () => {
+            if (isSmsTrackingEnabled(email)) {
+                runSmsScan(email);
+            }
+        };
+
+        const handleSettingChanged = () => {
+            const enabled = isSmsTrackingEnabled(email);
+            setSmsTrackingEnabledState(enabled);
+            if (enabled) {
+                runSmsScan(email);
+            } else {
+                setPendingSmsQueue([]);
+            }
+        };
+
+        window.addEventListener("nativeSmsPermissionResult", handlePermissionResult);
+        window.addEventListener("nativeAppResumed", handleAppResumed);
+        window.addEventListener("smsTrackingSettingChanged", handleSettingChanged);
+
+        return () => {
+            window.removeEventListener("nativeSmsPermissionResult", handlePermissionResult);
+            window.removeEventListener("nativeAppResumed", handleAppResumed);
+            window.removeEventListener("smsTrackingSettingChanged", handleSettingChanged);
+        };
+    }, [user, runSmsScan, showAlert, t]);
 
     const toggleShowDeleted = () => {
         setShowDeleted((prev) => {
@@ -70,6 +138,78 @@ const ReportsPage = () => {
         });
     };
 
+    const toggleSmsTracking = () => {
+        if (!user?.email) return;
+        const next = !smsTrackingEnabled;
+
+        if (next) {
+            if (window.Android && !window.Android.hasSmsPermission()) {
+                window.Android.requestSmsPermission();
+                return;
+            }
+            setSmsTrackingEnabled(user.email, true);
+            setSmsTrackingEnabledState(true);
+            showAlert(t("smsPopup.trackingEnabled"), "success");
+            runSmsScan(user.email);
+        } else {
+            setSmsTrackingEnabled(user.email, false);
+            setSmsTrackingEnabledState(false);
+            setPendingSmsQueue([]);
+            showAlert(t("smsPopup.trackingDisabled"), "info");
+        }
+    };
+
+    const handleCommitSmsBatch = async (
+        approved: StagedApprovedSmsTransaction[],
+        dismissedSmsIds: string[]
+    ) => {
+        if (!user?.email) {
+            setPendingSmsQueue([]);
+            return;
+        }
+
+        const allProcessedIds = [
+            ...approved.map((item) => item.smsId),
+            ...dismissedSmsIds,
+        ];
+
+        try {
+            setLoading(true);
+            if (approved.length > 0) {
+                await createExpensesBatch(
+                    approved.map((item) => ({
+                        reportId: item.reportId,
+                        expenseTitle: item.expenseTitle,
+                        expenseAmount: item.signedAmount,
+                        authorEmail: user.email!,
+                        authorDisplayName: user.displayName || user.email!,
+                    }))
+                );
+            }
+
+            if (allProcessedIds.length > 0) {
+                markSmsProcessedBatch(user.email, allProcessedIds);
+            }
+
+            setPendingSmsQueue([]);
+
+            if (approved.length > 0) {
+                await fetchReports(user.email);
+                showAlert(t("smsPopup.transactionAdded"), "success");
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert(t("smsPopup.transactionAddError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSkipSmsForNow = () => {
+        // Clears the popup queue for the current session without marking messages as processed,
+        // so future re-opens of the app will surface them again.
+        setPendingSmsQueue([]);
+    };
 
     const handleAddReport = async (title: string, amount: number) => {
         try {
@@ -108,6 +248,8 @@ const ReportsPage = () => {
             <ReportsHamburger
                 showDeleted={showDeleted}
                 toggleShowDeleted={toggleShowDeleted}
+                smsTrackingEnabled={smsTrackingEnabled}
+                toggleSmsTracking={toggleSmsTracking}
                 showContacts={() => setShowContacts(true)}
                 showCategories={() => setShowCategories(true)}
                 handleLogout={handleLogout}
@@ -186,6 +328,15 @@ const ReportsPage = () => {
                     amountPlaceholder={t("reports.amountPlaceholder")}
                     onReject={() => setIsModalOpen(false)}
                     onAccept={handleAddReport}
+                />
+            )}
+
+            {pendingSmsQueue.length > 0 && activeReports.length > 0 && (
+                <SmsTransactionPopup
+                    queue={pendingSmsQueue}
+                    activeReports={activeReports}
+                    onCommitBatch={handleCommitSmsBatch}
+                    onSkipForNow={handleSkipSmsForNow}
                 />
             )}
 
