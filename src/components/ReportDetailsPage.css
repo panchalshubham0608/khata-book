@@ -161,6 +161,12 @@
     border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
+.report-hero-badge.archived {
+    background: rgba(148, 163, 184, 0.24);
+    color: #e2e8f0;
+    border: 1px solid rgba(203, 213, 225, 0.32);
+}
+
 .report-hero-badge.deleted {
     background: rgba(239, 68, 68, 0.25);
     color: #fecaca;

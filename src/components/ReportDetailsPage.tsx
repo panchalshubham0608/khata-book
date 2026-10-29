@@ -11,6 +11,7 @@ import {
     FiTrendingDown,
     FiTrendingUp,
     FiLayers,
+    FiArchive,
 } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
@@ -19,20 +20,24 @@ import "./ReportDetailsPage.css";
 import { auth } from "../firebase/firebase";
 import type { Report } from "../firebase/types";
 import {
+    archiveReport,
     createExpense,
     deleteExpense,
     deleteReport,
     getReport,
     shareReport,
+    unarchiveReport,
     unshareReport,
     updateExense,
 } from "../firebase/reportService";
+import { getUserProfile } from "../firebase/userProfileService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
 import {
     isShared,
     isOwner,
+    isArchived,
     getRemainingDays,
     calculateAmountSpent,
     calculateTopupAmount,
@@ -52,6 +57,7 @@ const ReportDetailsPage = () => {
 
     const [user, setUser] = useState<User | null>(null);
     const [report, setReport] = useState<Report | null>(null);
+    const [archivedReports, setArchivedReports] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
@@ -64,13 +70,24 @@ const ReportDetailsPage = () => {
             if (user) setUser(user);
             if (!user?.email) {
                 setReport(null);
+                setArchivedReports([]);
                 setLoading(false);
                 return;
             }
 
             try {
                 setLoading(true);
-                const fetched = await getReport(reportId);
+                const [fetched, profile] = await Promise.all([
+                    getReport(reportId),
+                    getUserProfile(user.email).catch(() => ({
+                        id: user.email!,
+                        owner: user.email!,
+                        archivedReports: [] as string[],
+                        updatedAt: "",
+                    })),
+                ]);
+
+                setArchivedReports(profile.archivedReports);
 
                 if (!fetched) {
                     showAlert(t("reportDetails.reportNotFound"), "error");
@@ -294,6 +311,46 @@ const ReportDetailsPage = () => {
         }
     };
 
+    const handleArchiveReport = useCallback(async () => {
+        try {
+            if (!reportId || !user?.email) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await archiveReport(reportId, user.email);
+            setArchivedReports((prev) =>
+                prev.includes(reportId) ? prev : [...prev, reportId]
+            );
+            navigate("/reports");
+        } catch (err) {
+            console.error(err);
+            showAlert(t("reportDetails.reportArchiveError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, user, navigate, showAlert, t]);
+
+    const handleUnarchiveReport = useCallback(async () => {
+        try {
+            if (!reportId || !user?.email) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await unarchiveReport(reportId, user.email);
+            setArchivedReports((prev) => prev.filter((id) => id !== reportId));
+            showAlert(t("reportDetails.reportUnarchiveSuccess"), "success");
+        } catch (err) {
+            console.error(err);
+            showAlert(t("reportDetails.reportUnarchiveError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, user, showAlert, t]);
+
     const handleBackup = useCallback(async () => {
         if (!report) {
             showAlert(t("reportDetails.backupUnavailable"), "error");
@@ -378,6 +435,8 @@ const ReportDetailsPage = () => {
     const canActOnExpense = Boolean(
         isOwner(report, user?.email) && !report.deleted
     );
+    const canArchiveReport = Boolean(!report.deleted);
+    const reportArchived = isArchived(report.id, archivedReports);
 
     return (
         <div className="report-details-container">
@@ -408,6 +467,11 @@ const ReportDetailsPage = () => {
                         </div>
 
                         <div className="report-hero-nav-right">
+                            {reportArchived && (
+                                <span className="report-hero-badge archived">
+                                    <FiArchive size={11} /> {t("reports.archivedBadge")}
+                                </span>
+                            )}
                             {isShared(report, user?.email) && (
                                 <span className="report-hero-badge shared">
                                     <FiShare2 size={12} /> {t("reports.sharedBadge")}
@@ -420,10 +484,14 @@ const ReportDetailsPage = () => {
                             )}
                             <ReportHamburgerMenu
                                 canManage={canActOnExpense}
+                                canArchive={canArchiveReport}
+                                isArchived={reportArchived}
                                 sharedWith={report.sharedWith}
                                 onAddEmail={handleAddEmail}
                                 onRemoveEmail={handleRemoveEmail}
                                 onDeleteReport={handleDeleteReport}
+                                onArchiveReport={handleArchiveReport}
+                                onUnarchiveReport={handleUnarchiveReport}
                                 onTopup={handleTopup}
                                 onBackup={handleBackup}
                             />

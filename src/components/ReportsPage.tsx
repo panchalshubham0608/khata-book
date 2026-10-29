@@ -8,6 +8,7 @@ import {
     FiTrendingUp,
     FiTrendingDown,
     FiFolder,
+    FiArchive,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
@@ -16,11 +17,12 @@ import { auth } from "../firebase/firebase";
 import "./ReportsPage.css";
 import type { Report } from "../firebase/types";
 import { createExpensesBatch, createReport, getReports } from "../firebase/reportService";
+import { getUserProfile } from "../firebase/userProfileService";
 import Categories from "./Categories";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, calculateAmountSpent, calculateEffectiveBudget } from "../utils/reportUtils";
+import { isShared, isArchived, calculateAmountSpent, calculateEffectiveBudget } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 import Contacts from "./Contacts";
 import SmsTransactionPopup from "./SmsTransactionPopup";
@@ -37,11 +39,16 @@ import { useTranslation } from "../i18n/locale";
 const ReportsPage = () => {
     const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>([]);
+    const [archivedReports, setArchivedReports] = useState<string[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [showDeleted, setShowDeleted] = useState<boolean>(() => {
         const stored = localStorage.getItem("showDeleted");
+        return stored === "true";
+    });
+    const [showArchived, setShowArchived] = useState<boolean>(() => {
+        const stored = localStorage.getItem("showArchived");
         return stored === "true";
     });
     const [smsTrackingEnabled, setSmsTrackingEnabledState] = useState<boolean>(false);
@@ -52,8 +59,11 @@ const ReportsPage = () => {
     const { t, locale } = useTranslation();
 
     const activeReports = useMemo(
-        () => reports.filter((r) => !r.deleted),
-        [reports]
+        () =>
+            reports.filter(
+                (r) => !r.deleted && !isArchived(r.id, archivedReports)
+            ),
+        [reports, archivedReports]
     );
 
     const portfolioStats = useMemo(() => {
@@ -80,7 +90,18 @@ const ReportsPage = () => {
     const fetchReports = useCallback(async (email: string) => {
         try {
             setLoading(true);
-            const userReports = await getReports(email, { showDeleted });
+            const profile = await getUserProfile(email).catch(() => ({
+                id: email,
+                owner: email,
+                archivedReports: [] as string[],
+                updatedAt: "",
+            }));
+            setArchivedReports(profile.archivedReports);
+            const userReports = await getReports(email, {
+                showDeleted,
+                showArchived,
+                archivedReports: profile.archivedReports,
+            });
             setReports(userReports);
         } catch (err) {
             console.error(err);
@@ -88,7 +109,7 @@ const ReportsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [showAlert, showDeleted, t]);
+    }, [showAlert, showDeleted, showArchived, t]);
 
     const runSmsScan = useCallback(async (email: string) => {
         if (!window.Android || !isSmsTrackingEnabled(email)) return;
@@ -108,6 +129,7 @@ const ReportsPage = () => {
                 runSmsScan(currentUser.email);
             } else {
                 setReports([]);
+                setArchivedReports([]);
                 setLoading(false);
             }
         });
@@ -164,6 +186,14 @@ const ReportsPage = () => {
         setShowDeleted((prev) => {
             const next = !prev;
             localStorage.setItem("showDeleted", next.toString());
+            return next;
+        });
+    };
+
+    const toggleShowArchived = () => {
+        setShowArchived((prev) => {
+            const next = !prev;
+            localStorage.setItem("showArchived", next.toString());
             return next;
         });
     };
@@ -295,6 +325,8 @@ const ReportsPage = () => {
                 <ReportsHamburger
                     showDeleted={showDeleted}
                     toggleShowDeleted={toggleShowDeleted}
+                    showArchived={showArchived}
+                    toggleShowArchived={toggleShowArchived}
                     smsTrackingEnabled={smsTrackingEnabled}
                     toggleSmsTracking={toggleSmsTracking}
                     showContacts={() => setShowContacts(true)}
@@ -405,10 +437,16 @@ const ReportsPage = () => {
                                 )
                                 : "";
 
+                            const reportArchived = isArchived(
+                                report.id,
+                                archivedReports
+                            );
+
                             return (
                                 <div
-                                    className={`report-card ${report.deleted ? "report-deleted" : ""
-                                        }`}
+                                    className={`report-card ${
+                                        report.deleted ? "report-deleted" : ""
+                                    } ${reportArchived ? "report-archived" : ""}`}
                                     key={report.id}
                                     onClick={() => navigate(`/reports/${report.id}`)}
                                 >
@@ -431,6 +469,12 @@ const ReportsPage = () => {
                                             {report.deleted && (
                                                 <span className="deleted-badge">
                                                     {t("reports.deletedBadge")}
+                                                </span>
+                                            )}
+                                            {reportArchived && (
+                                                <span className="archived-badge">
+                                                    <FiArchive size={11} />{" "}
+                                                    {t("reports.archivedBadge")}
                                                 </span>
                                             )}
                                             {isShared(report, user?.email) && (

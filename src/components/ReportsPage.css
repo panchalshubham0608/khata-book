@@ -284,6 +284,12 @@
     background: #f8fafc;
 }
 
+.report-archived {
+    opacity: 0.78;
+    background: #f8fafc;
+    border-style: dashed;
+}
+
 .report-card .report-header {
     display: flex;
     justify-content: space-between;
@@ -362,6 +368,19 @@
     background: #eff6ff;
     color: #2563eb;
     border: 1px solid #bfdbfe;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.archived-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
     padding: 3px 8px;
     border-radius: 999px;
     font-size: 11px;

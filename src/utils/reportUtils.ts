@@ -5,6 +5,10 @@ export const calculateAmountSpent = (report: Report) => Math.abs(report.expenses
 export const calculateEffectiveBudget = (report: Report) => Number(report.budget) + calculateTopupAmount(report);
 export const isShared = (report: Report, currentUserEmail: string | null | undefined) => currentUserEmail && report.sharedWith.includes(currentUserEmail);
 export const isOwner = (report: Report, currentUserEmail: string | null | undefined) => currentUserEmail && report.owner === currentUserEmail;
+export const isArchived = (
+    reportId: string | undefined | null,
+    archivedReports: string[] | undefined | null
+): boolean => Boolean(reportId && archivedReports?.includes(reportId));
 
 export const getRemainingDays = (deletedAt: string | number): number => {
     const deletedDate = new Date(deletedAt).getTime();

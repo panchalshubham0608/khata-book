@@ -13,6 +13,11 @@ import {
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import type { Expense, Report } from "./types";
+import {
+  archiveReportForUser,
+  getUserProfile,
+  unarchiveReportForUser,
+} from "./userProfileService";
 
 interface CreateReportOptions {
   title: string;
@@ -62,6 +67,14 @@ export async function unshareReport(reportId: string, email: string) {
   await updateDoc(ref, {
     sharedWith: arrayRemove(email),
   });
+}
+
+export async function archiveReport(reportId: string, email?: string) {
+  await archiveReportForUser(reportId, email);
+}
+
+export async function unarchiveReport(reportId: string, email?: string) {
+  await unarchiveReportForUser(reportId, email);
 }
 
 export interface CreateExpenseOptions {
@@ -163,7 +176,9 @@ async function attachExpenses(report: Report): Promise<Report> {
 }
 
 interface GetReportsOptions {
-  showDeleted?: boolean
+  showDeleted?: boolean;
+  showArchived?: boolean;
+  archivedReports?: string[];
 }
 
 export async function getReports(email: string, options: GetReportsOptions): Promise<Report[]> {
@@ -172,24 +187,41 @@ export async function getReports(email: string, options: GetReportsOptions): Pro
   const ownerQ = query(reportsRef, where("owner", "==", email));
   const sharedQ = query(reportsRef, where("sharedWith", "array-contains", email));
 
-  const [ownerSnap, sharedSnap] = await Promise.all([
+  const [ownerSnap, sharedSnap, resolvedArchivedIds] = await Promise.all([
     getDocs(ownerQ),
     getDocs(sharedQ),
+    options.archivedReports
+      ? Promise.resolve(options.archivedReports)
+      : getUserProfile(email)
+          .then((profile) => profile.archivedReports)
+          .catch(() => [] as string[]),
   ]);
 
-  const reports = [...ownerSnap.docs, ...sharedSnap.docs].map((d) => ({
-    ...(d.data() as Report),
-    id: d.id,
-  }))
+  const archivedReportIds = new Set(resolvedArchivedIds);
+  const isReportArchived = (r: Report) => archivedReportIds.has(r.id);
+
+  const reports = [...ownerSnap.docs, ...sharedSnap.docs]
+    .map((d) => ({
+      ...(d.data() as Report),
+      id: d.id,
+    }))
     .sort((r1, r2) => Date.parse(r2.createdAt) - Date.parse(r1.createdAt));
 
-  let baseReports = reports.filter(report => !report.deleted);
+  let baseReports = reports.filter((r) => !r.deleted && !isReportArchived(r));
+
+  if (options.showArchived) {
+    const archivedReports = reports.filter(
+      (r) => !r.deleted && isReportArchived(r)
+    );
+    baseReports = [...baseReports, ...archivedReports];
+  }
+
   if (options.showDeleted) {
-    const deletedReports = reports.filter(report => report.deleted);
-    baseReports = [
-      ...baseReports,
-      ...deletedReports
-    ];
+    const deletedReports = reports.filter(
+      (r) =>
+        r.deleted && (!isReportArchived(r) || Boolean(options.showArchived))
+    );
+    baseReports = [...baseReports, ...deletedReports];
   }
 
   // Dedupe
@@ -208,7 +240,7 @@ export async function getReport(reportId: string): Promise<Report | null> {
   const reportSnap = await getDoc(doc(db, "reports", reportId));
   if (!reportSnap.exists()) return null;
 
-  const baseReport = {
+  const baseReport: Report = {
     id: reportId,
     ...(reportSnap.data() as Omit<Report, "id" | "expenses">),
     expenses: [],

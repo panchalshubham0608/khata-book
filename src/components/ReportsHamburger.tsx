@@ -3,6 +3,7 @@ import {
     FiMenu,
     FiLogOut,
     FiEye,
+    FiArchive,
     FiMessageSquare,
     FiUsers,
 } from "react-icons/fi";
@@ -13,6 +14,8 @@ import { useTranslation } from "../i18n/locale";
 interface ReportsHamburgerProps {
     showDeleted: boolean;
     toggleShowDeleted: () => void;
+    showArchived: boolean;
+    toggleShowArchived: () => void;
     smsTrackingEnabled: boolean;
     toggleSmsTracking: () => void;
     showContacts: () => void;
@@ -23,6 +26,8 @@ interface ReportsHamburgerProps {
 const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     showDeleted,
     toggleShowDeleted,
+    showArchived,
+    toggleShowArchived,
     smsTrackingEnabled,
     toggleSmsTracking,
     showContacts,
@@ -39,6 +44,13 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
             icon: <FiEye size={16} />,
             ticked: showDeleted,
             onClick: toggleShowDeleted,
+        },
+        {
+            key: "showArchived",
+            label: t("reports.showArchivedReports"),
+            icon: <FiArchive size={16} />,
+            ticked: showArchived,
+            onClick: toggleShowArchived,
         },
         {
             key: "smsTracking",
