@@ -2,29 +2,47 @@
 .voice-input-group {
     display: flex;
     align-items: center;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
     width: 100%;
+    overflow: hidden;
+    transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    box-sizing: border-box;
+}
+
+.voice-input-group:focus-within {
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .voice-input-field {
     flex: 1;
-    padding: 10px 12px;
+    padding: 11px 13px;
     border: none;
     outline: none;
-    font-size: 16px;
+    font-size: 15px;
+    font-family: inherit;
+    background: transparent;
+    color: #0f172a;
 }
 
 /* voice button */
 .voice-input-button {
     background: transparent;
     border: none;
-    padding: 8px 10px;
+    padding: 9px 12px;
     cursor: pointer;
-    border-left: 1px solid #ddd;
+    color: #2563eb;
+    border-left: 1px solid #e2e8f0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
 }
 
 .voice-input-button:hover {
-    background: #f1f1f1;
+    background: #eff6ff;
 }
+

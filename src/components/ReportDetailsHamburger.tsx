@@ -8,6 +8,7 @@ import { useTranslation } from "../i18n/locale";
 
 interface ReportHamburgerMenuProps {
   sharedWith: string[];
+  canManage?: boolean;
   onAddEmail?: (email: string) => void;
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
@@ -17,6 +18,7 @@ interface ReportHamburgerMenuProps {
 
 const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   sharedWith,
+  canManage = true,
   onAddEmail,
   onRemoveEmail,
   onDeleteReport,
@@ -28,34 +30,36 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   const [showAccessPopup, setShowAccessPopup] = useState<boolean>(false);
   const [showTopupInput, setShowTopupInput] = useState<boolean>(false);
 
-  const reportMenuItems: HamburgerItem[] = [
-    {
-      key: "manageAccess",
-      label: t("reportHamburger.manageAccess"),
-      icon: <FiUsers size={16} />,
-      onClick: () => setShowAccessPopup(true),
-    },
-    {
-      key: "topup",
-      label: t("reportHamburger.topup"),
-      icon: <FiPlusCircle size={16} />,
-      onClick: () => setShowTopupInput(true),
-    },
-    {
-      key: "backup",
-      label: t("reportHamburger.backup"),
-      icon: <FiUploadCloud size={16} />,
-      onClick: () => onBackup?.(),
-    },
-    {
-      key: "deleteReport",
-      label: t("reportHamburger.deleteReport"),
-      icon: <FiTrash2 size={16} />,
-      destructive: true,
-      dividerBefore: true,
-      onClick: () => setShowDeleteReportDialog(true),
-    },
-  ];
+  const reportMenuItems: HamburgerItem[] = canManage
+    ? [
+        {
+          key: "manageAccess",
+          label: t("reportHamburger.manageAccess"),
+          icon: <FiUsers size={16} />,
+          onClick: () => setShowAccessPopup(true),
+        },
+        {
+          key: "topup",
+          label: t("reportHamburger.topup"),
+          icon: <FiPlusCircle size={16} />,
+          onClick: () => setShowTopupInput(true),
+        },
+        {
+          key: "backup",
+          label: t("reportHamburger.backup"),
+          icon: <FiUploadCloud size={16} />,
+          onClick: () => onBackup?.(),
+        },
+        {
+          key: "deleteReport",
+          label: t("reportHamburger.deleteReport"),
+          icon: <FiTrash2 size={16} />,
+          destructive: true,
+          dividerBefore: true,
+          onClick: () => setShowDeleteReportDialog(true),
+        },
+      ]
+    : [];
 
   const handleTopup = async (_: string, amount: number) => {
     setShowTopupInput(false);

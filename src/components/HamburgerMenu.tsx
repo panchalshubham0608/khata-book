@@ -193,7 +193,9 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="hamburger-divider" />
+                                        {regularItems.length > 0 && (
+                                            <div className="hamburger-divider" />
+                                        )}
                                     </>
                                 )}
 

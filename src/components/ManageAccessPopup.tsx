@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FiMail, FiPlus, FiTrash2, FiUsers, FiX } from "react-icons/fi";
 import ConfirmDialog from "./ConfirmDialog";
 import "./ManageAccessPopup.css";
 import { getContacts } from "../firebase/contactService";
@@ -16,7 +17,7 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
     sharedWith,
     onAddEmail,
     onRemoveEmail,
-    onClose
+    onClose,
 }) => {
     const [email, setEmail] = useState<string>("");
     const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
@@ -24,80 +25,172 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
     const [contacts, setContacts] = useState<Contact[]>([]);
     const { t } = useTranslation();
 
-    const handleAdd = (email: string) => {
-        onAddEmail(email.trim());
+    const handleAdd = (targetEmail: string) => {
+        const trimmed = targetEmail.trim();
+        if (!trimmed) return;
+        onAddEmail(trimmed);
         setEmail("");
     };
 
     useEffect(() => {
         let isMounted = true;
 
-        const fetchContacts = async () => {
-            const data = await getContacts();
-            if (isMounted) {
-                setContacts(data.filter(contact => !sharedWith.includes(contact.email)));
+        (async () => {
+            try {
+                const data = await getContacts();
+                if (isMounted) {
+                    setContacts(
+                        data.filter(
+                            (contact) => !sharedWith.includes(contact.email)
+                        )
+                    );
+                }
+            } catch (err) {
+                console.error(err);
             }
-        };
-
-        fetchContacts();
+        })();
 
         return () => {
             isMounted = false;
         };
-    }, [getContacts, sharedWith]);
+    }, [sharedWith]);
+
+    const getInitial = (emailStr: string) =>
+        emailStr.trim().charAt(0).toUpperCase() || "?";
 
     return (
-        <div className="access-overlay">
-            <div className="access-box">
-                <div className="access-title">{t("manageAccess.title")}</div>
-                <div className="access-input-row">
-                    <input
-                        type="email"
-                        placeholder={t("manageAccess.placeholder")}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="access-input"
-                    />
-                    <button className="access-add-btn" onClick={() => handleAdd(email)}>
-                        {t("manageAccess.addButton")}
+        <div className="access-overlay" onClick={onClose}>
+            <div
+                className="access-box"
+                role="dialog"
+                aria-modal="true"
+                aria-label={t("manageAccess.title")}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="access-header">
+                    <div className="access-header-left">
+                        <div className="access-header-icon">
+                            <FiUsers size={20} />
+                        </div>
+                        <h3 className="access-title">
+                            {t("manageAccess.title")}
+                        </h3>
+                    </div>
+                    <button
+                        type="button"
+                        className="access-icon-close"
+                        aria-label={t("manageAccess.closeButton")}
+                        onClick={onClose}
+                    >
+                        <FiX size={20} />
                     </button>
                 </div>
-                {contacts.length > 0 &&
-                    <div>
-                        <div className="access-list-title">{t("manageAccess.contactsTitle")}</div>
-                        {contacts.map(c => (
-                            <div className="contact-chip"
-                                onClick={() => handleAdd(c.email)}>
-                                <span>{c.email}</span>
-                                <span className="contact-chip-icon">+</span>
-                            </div>
-                        ))}
-                    </div>}
 
-                <div className="access-list-title">{t("manageAccess.sharedWithTitle")}</div>
+                {/* Add Email Input Row */}
+                <div className="access-input-row">
+                    <div className="access-input-wrapper">
+                        <FiMail size={16} className="access-input-icon" />
+                        <input
+                            type="email"
+                            placeholder={t("manageAccess.placeholder")}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAdd(email);
+                                }
+                            }}
+                            className="access-input"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        className="access-add-btn"
+                        disabled={!email.trim()}
+                        onClick={() => handleAdd(email)}
+                    >
+                        <FiPlus size={16} />
+                        <span>{t("manageAccess.addButton")}</span>
+                    </button>
+                </div>
 
-                {sharedWith.length === 0 ? (
-                    <div className="access-empty">{t("manageAccess.none")}</div>
-                ) : (
-                    <ul className="access-list">
-                        {sharedWith.map((e) => (
-                            <li key={e} className="access-item">
-                                <span>{e}</span>
+                {/* Quick Contacts */}
+                {contacts.length > 0 && (
+                    <div className="access-contacts-section">
+                        <div className="access-list-title">
+                            {t("manageAccess.contactsTitle")}
+                        </div>
+                        <div className="access-chips-wrap">
+                            {contacts.map((c) => (
                                 <button
-                                    className="access-remove-btn"
-                                    onClick={() => {
-                                        setSelectedEmail(e);
-                                        setShowRemoveEmail(true);
-                                    }}
+                                    key={c.id || c.email}
+                                    type="button"
+                                    className="contact-chip"
+                                    onClick={() => handleAdd(c.email)}
                                 >
-                                    {t("manageAccess.removeConfirmConfirmText")}
+                                    <span>{c.email}</span>
+                                    <span className="contact-chip-icon">
+                                        <FiPlus size={12} />
+                                    </span>
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
+                            ))}
+                        </div>
+                    </div>
                 )}
 
-                <button className="access-close-btn" onClick={onClose}>
+                {/* Shared With List */}
+                <div className="access-list-header">
+                    <span className="access-list-title">
+                        {t("manageAccess.sharedWithTitle")}
+                    </span>
+                    {sharedWith.length > 0 && (
+                        <span className="access-count-pill">
+                            {sharedWith.length}
+                        </span>
+                    )}
+                </div>
+
+                <div className="access-list-body">
+                    {sharedWith.length === 0 ? (
+                        <div className="access-empty">
+                            {t("manageAccess.none")}
+                        </div>
+                    ) : (
+                        <ul className="access-list">
+                            {sharedWith.map((e) => (
+                                <li key={e} className="access-item">
+                                    <div className="access-item-info">
+                                        <span className="access-avatar">
+                                            {getInitial(e)}
+                                        </span>
+                                        <span className="access-email">{e}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="access-remove-btn"
+                                        aria-label={t(
+                                            "manageAccess.removeConfirmConfirmText"
+                                        )}
+                                        onClick={() => {
+                                            setSelectedEmail(e);
+                                            setShowRemoveEmail(true);
+                                        }}
+                                    >
+                                        <FiTrash2 size={15} />
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
+                <button
+                    type="button"
+                    className="access-close-btn"
+                    onClick={onClose}
+                >
                     {t("manageAccess.closeButton")}
                 </button>
             </div>
@@ -123,3 +216,4 @@ const ManageAccessPopup: React.FC<ManageAccessPopupProps> = ({
 };
 
 export default ManageAccessPopup;
+

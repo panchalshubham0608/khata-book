@@ -2,34 +2,43 @@
 .cd-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  padding: 16px;
+  z-index: 2100;
 }
 
 /* Modal Container */
 .cd-container {
-  width: 280px;
-  background: white;
+  width: 100%;
+  max-width: 340px;
+  background: #ffffff;
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-  animation: cd-popup 0.2s ease-out;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.25);
+  animation: cd-popup 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: "Plus Jakarta Sans", "Inter", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
 }
 
 /* Title & Message */
 .cd-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
 }
 
 .cd-message {
-  font-size: 14px;
-  color: #444;
-  margin-bottom: 20px;
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.45;
+  margin-bottom: 18px;
 }
 
 /* Buttons Container */
@@ -41,41 +50,46 @@
 
 /* Generic Button */
 .cd-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s ease;
 }
 
 /* Cancel Button */
 .cd-cancel {
-  background: #e5e5e5;
-  color: #333;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .cd-cancel:hover {
-  background: #d5d5d5;
+  background: #e2e8f0;
 }
 
 /* Delete Button (Red) */
 .cd-delete {
-  background: #ff4d4d;
-  color: white;
+  background: #dc2626;
+  color: #ffffff;
 }
 
 .cd-delete:hover {
-  background: #e63b3b;
+  background: #b91c1c;
 }
 
 /* Simple Popup Animation */
 @keyframes cd-popup {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: translateY(8px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
+
