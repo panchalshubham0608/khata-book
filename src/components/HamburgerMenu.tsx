@@ -13,6 +13,7 @@ export interface HamburgerItem {
     ticked?: boolean; // renders a modern toggle switch when boolean
     disabled?: boolean;
     keepOpen?: boolean;
+    hideChevron?: boolean;
     dividerBefore?: boolean;
     onClick: () => void | Promise<void>;
 }
@@ -20,6 +21,7 @@ export interface HamburgerItem {
 interface HamburgerMenuProps {
     toggleIcon: ReactNode;
     items: HamburgerItem[];
+    title?: string;
     className?: string;
     showLanguageSwitcher?: boolean;
 }
@@ -27,11 +29,13 @@ interface HamburgerMenuProps {
 const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     toggleIcon,
     items,
+    title,
     className = "",
     showLanguageSwitcher = false,
 }) => {
     const [open, setOpen] = React.useState(false);
     const { locale, setLocale, t } = useTranslation();
+    const drawerTitle = title || t("reports.settingsHeader");
 
     useEffect(() => {
         if (!open) return;
@@ -105,7 +109,8 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             <span className="hamburger-switch-thumb" />
                         </span>
                     ) : (
-                        !item.destructive && (
+                        !item.destructive &&
+                        !item.hideChevron && (
                             <FiChevronRight
                                 size={16}
                                 className="hamburger-item-chevron"
@@ -139,12 +144,12 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                             className="hamburger-drawer"
                             role="dialog"
                             aria-modal="true"
-                            aria-label={t("reports.settingsHeader")}
+                            aria-label={drawerTitle}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="hamburger-drawer-header">
                                 <span className="hamburger-drawer-title">
-                                    {t("reports.settingsHeader")}
+                                    {drawerTitle}
                                 </span>
                                 <button
                                     type="button"

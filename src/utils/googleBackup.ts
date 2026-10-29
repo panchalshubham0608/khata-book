@@ -1,7 +1,6 @@
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebase/firebase";
-import { getCategories } from "../firebase/categoryService";
-import type { Category, Report } from "../firebase/types";
+import type { Report } from "../firebase/types";
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
@@ -81,16 +80,6 @@ function formatSheetName(value: string): string {
     minute: "2-digit",
     second: "2-digit",
   }).format(date);
-}
-
-function resolveCategoryNames(categories: Category[], expenseCategories?: string[]): string {
-  if (!expenseCategories?.length) return "";
-
-  const categoryNames = expenseCategories
-    .map((categoryId) => categories.find((category) => category.id === categoryId)?.name || categoryId)
-    .filter(Boolean);
-
-  return categoryNames.join(", ");
 }
 
 async function findFolder(accessToken: string, folderName: string): Promise<string | null> {
@@ -201,23 +190,22 @@ export async function backupReportToGoogleSheets(report: Report): Promise<string
   const sheetTitle = `Backup ${formatSheetName(new Date().toISOString())}`;
   await addSheet(accessToken, spreadsheetId, sheetTitle);
 
-  const categories = await getCategories();
   const rows: string[][] = [
     ["Report Title", report.title],
     ["Budget", report.budget.toString()],
     ["Owner", report.owner],
     ["Created At", formatLocalDateTime(report.createdAt)],
     [],
-    ["Title", "Amount", "Date", "Author", "Categories"],
+    ["Title", "Amount", "Date", "Author"],
     ...report.expenses.map((expense) => [
       expense.title,
       expense.amount.toString(),
       formatLocalDateTime(expense.date),
       `${expense.authorDisplayName} <${expense.authorEmail}>`,
-      resolveCategoryNames(categories, expense.categories),
     ]),
   ];
 
   await writeSpreadsheetRows(accessToken, spreadsheetId, sheetTitle, rows);
   return spreadsheetId;
 }
+

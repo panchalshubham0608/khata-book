@@ -8,58 +8,6 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Top Navigation Bar */
-.report-details-topbar {
-    position: relative;
-    max-width: 500px;
-    margin: 0 auto 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 44px;
-}
-
-.back-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(8px);
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-    color: #0f172a;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
-}
-
-.back-button:hover {
-    background: #ffffff;
-    border-color: #cbd5e1;
-}
-
-.back-button:active {
-    transform: scale(0.97);
-}
-
-/* Keep hamburger aligned inside the topbar */
-.report-details-topbar .hamburger-root {
-    right: 0;
-    top: 2px;
-}
-
-.report-details-topbar .hamburger-toggle {
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-    color: #0f172a;
-}
-
 /* Main Content Wrapper */
 .report-details-main {
     max-width: 500px;
@@ -93,7 +41,7 @@
 .report-hero-card {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
     border-radius: 22px;
-    padding: 20px;
+    padding: 18px 20px 20px;
     color: #ffffff;
     box-shadow: 0 16px 36px -8px rgba(37, 99, 235, 0.35);
     position: relative;
@@ -115,23 +63,69 @@
     pointer-events: none;
 }
 
+/* Top Header Row inside Hero Card */
 .report-hero-top {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    position: relative;
+    z-index: 2;
+}
+
+.report-hero-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.report-hamburger-wrap {
+    display: inline-flex;
+    align-items: center;
+}
+
+.report-hero-card .hamburger-root {
+    position: static;
+}
+
+.report-hero-card .hamburger-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: none;
+    color: #ffffff;
+    padding: 0;
+}
+
+.report-hero-card .hamburger-toggle:hover {
+    background: rgba(255, 255, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+.report-hero-card .hamburger-toggle.is-open {
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    color: #ffffff;
 }
 
 .report-hero-title-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
 }
 
 .report-hero-title {
     margin: 0;
-    font-size: 20px;
+    font-size: 21px;
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.25;
@@ -149,18 +143,12 @@
     color: rgba(255, 255, 255, 0.72);
 }
 
-.report-hero-badges {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
 .report-hero-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
+    height: 28px;
+    padding: 0 10px;
     border-radius: 999px;
     font-size: 11.5px;
     font-weight: 600;
@@ -355,6 +343,15 @@
 
 .search-input::placeholder {
     color: #94a3b8;
+}
+
+.search-input::-webkit-search-decoration,
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-results-button,
+.search-input::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
 }
 
 .search-input:focus {

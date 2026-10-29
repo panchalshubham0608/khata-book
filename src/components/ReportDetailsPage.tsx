@@ -4,7 +4,6 @@ import {
     FiShare2,
     FiPlus,
     FiFileText,
-    FiArrowLeft,
     FiSearch,
     FiX,
     FiCalendar,
@@ -13,12 +12,12 @@ import {
     FiTrendingUp,
     FiLayers,
 } from "react-icons/fi";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
 import ReportHamburgerMenu from "./ReportDetailsHamburger";
 import "./ReportDetailsPage.css";
 import { auth } from "../firebase/firebase";
-import type { Report, Category } from "../firebase/types";
+import type { Report } from "../firebase/types";
 import {
     createExpense,
     deleteExpense,
@@ -28,7 +27,6 @@ import {
     unshareReport,
     updateExense,
 } from "../firebase/reportService";
-import { getCategories } from "../firebase/categoryService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
@@ -59,7 +57,6 @@ const ReportDetailsPage = () => {
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-    const [categoryMap, setCategoryMap] = useState<Record<string, Category>>({});
 
     useEffect(() => {
         if (!reportId) return;
@@ -101,29 +98,6 @@ const ReportDetailsPage = () => {
 
         return () => unsubscribe();
     }, [reportId, showAlert, t]);
-
-    useEffect(() => {
-        let mounted = true;
-        if (!user) return;
-
-        (async () => {
-            try {
-                const categories = await getCategories();
-                if (!mounted) return;
-                const map: Record<string, Category> = {};
-                categories.forEach((category) => {
-                    map[category.id] = category;
-                });
-                setCategoryMap(map);
-            } catch (err) {
-                console.error(err);
-            }
-        })();
-
-        return () => {
-            mounted = false;
-        };
-    }, [user]);
 
     const createExpenseHelper = useCallback(
         async (
@@ -346,59 +320,19 @@ const ReportDetailsPage = () => {
         return () => window.clearTimeout(handler);
     }, [searchTerm]);
 
-    const parseSearchQuery = (query: string) => {
-        const tokens = query.trim().split(/\s+/).filter(Boolean);
-        const categoryTerms: string[] = [];
-        const textTerms: string[] = [];
-
-        tokens.forEach((token) => {
-            const match = token.match(/^c[:=](.+)$/i);
-            if (match?.[1]) {
-                categoryTerms.push(match[1].toLowerCase());
-            } else {
-                textTerms.push(token.toLowerCase());
-            }
-        });
-
-        return {
-            categoryTerms,
-            text: textTerms.join(" "),
-        };
-    };
-
     const filteredExpenses = useMemo(() => {
         if (!report) return [];
         if (!debouncedSearchTerm) return report.expenses;
 
-        const { categoryTerms, text } = parseSearchQuery(debouncedSearchTerm);
-
-        return report.expenses.filter((expense) => {
-            const categoryNames = (expense.categories || []).map((categoryId) => {
-                return (
-                    categoryMap[categoryId]?.name?.toLowerCase() ??
-                    categoryId.toLowerCase()
-                );
-            });
-
-            const categoryMatch =
-                categoryTerms.length === 0 ||
-                categoryTerms.every((term) =>
-                    categoryNames.some((name) => name.includes(term))
-                );
-
-            const textMatch =
-                !text ||
-                [
-                    expense.title.toLowerCase(),
-                    expense.authorDisplayName.toLowerCase(),
-                    expense.authorEmail.toLowerCase(),
-                    expense.amount.toString(),
-                    ...categoryNames,
-                ].some((value) => value.includes(text));
-
-            return categoryMatch && textMatch;
-        });
-    }, [report, debouncedSearchTerm, categoryMap]);
+        return report.expenses.filter((expense) =>
+            [
+                expense.title.toLowerCase(),
+                expense.authorDisplayName.toLowerCase(),
+                expense.authorEmail.toLowerCase(),
+                expense.amount.toString(),
+            ].some((value) => value.includes(debouncedSearchTerm))
+        );
+    }, [report, debouncedSearchTerm]);
 
     const filteredTotals = useMemo(() => {
         return filteredExpenses.reduce(
@@ -450,24 +384,6 @@ const ReportDetailsPage = () => {
             <Alert alert={alert} />
             <Loader visible={loading} />
 
-            {/* Top Navigation Bar */}
-            <header className="report-details-topbar">
-                <Link to="/reports" className="back-button">
-                    <FiArrowLeft size={18} />
-                    <span>{t("reportDetails.back")}</span>
-                </Link>
-
-                <ReportHamburgerMenu
-                    canManage={canActOnExpense}
-                    sharedWith={report.sharedWith}
-                    onAddEmail={handleAddEmail}
-                    onRemoveEmail={handleRemoveEmail}
-                    onDeleteReport={handleDeleteReport}
-                    onTopup={handleTopup}
-                    onBackup={handleBackup}
-                />
-            </header>
-
             <main className="report-details-main">
                 {report.deletedAt && (
                     <div className="deleted-message-banner">
@@ -491,7 +407,7 @@ const ReportDetailsPage = () => {
                             </span>
                         </div>
 
-                        <div className="report-hero-badges">
+                        <div className="report-hero-nav-right">
                             {isShared(report, user?.email) && (
                                 <span className="report-hero-badge shared">
                                     <FiShare2 size={12} /> {t("reports.sharedBadge")}
@@ -502,6 +418,15 @@ const ReportDetailsPage = () => {
                                     {t("reports.deletedBadge")}
                                 </span>
                             )}
+                            <ReportHamburgerMenu
+                                canManage={canActOnExpense}
+                                sharedWith={report.sharedWith}
+                                onAddEmail={handleAddEmail}
+                                onRemoveEmail={handleRemoveEmail}
+                                onDeleteReport={handleDeleteReport}
+                                onTopup={handleTopup}
+                                onBackup={handleBackup}
+                            />
                         </div>
                     </div>
 
@@ -657,7 +582,6 @@ const ReportDetailsPage = () => {
                             <ExpenseRow
                                 key={expense.id}
                                 expense={expense}
-                                categoryMap={categoryMap}
                                 onAction={() => {
                                     if (canActOnExpense && !expense.deleted) {
                                         setSelectedExpenseId(expense.id);
