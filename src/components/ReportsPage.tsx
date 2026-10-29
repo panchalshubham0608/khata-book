@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FiShare2, FiPlus, FiUsers, FiFileText } from "react-icons/fi";
+import {
+    FiShare2,
+    FiPlus,
+    FiUsers,
+    FiFileText,
+    FiChevronRight,
+    FiTrendingUp,
+    FiTrendingDown,
+    FiFolder,
+} from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
 import { signOut, type User } from "firebase/auth";
@@ -11,7 +20,7 @@ import Categories from "./Categories";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
+import { isShared, calculateAmountSpent, calculateEffectiveBudget, calculateTopupAmount } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 import Contacts from "./Contacts";
 import SmsTransactionPopup from "./SmsTransactionPopup";
@@ -33,19 +42,40 @@ const ReportsPage = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [showDeleted, setShowDeleted] = useState<boolean>(() => {
         const stored = localStorage.getItem("showDeleted");
-        return stored === "true"; // converts string "true" to boolean true, everything else is false
+        return stored === "true";
     });
     const [smsTrackingEnabled, setSmsTrackingEnabledState] = useState<boolean>(false);
     const [pendingSmsQueue, setPendingSmsQueue] = useState<PendingSmsTransaction[]>([]);
     const [showContacts, setShowContacts] = useState(false);
     const [showCategories, setShowCategories] = useState(false);
     const { alert, showAlert } = useAlert();
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     const activeReports = useMemo(
         () => reports.filter((r) => !r.deleted),
         [reports]
     );
+
+    const portfolioStats = useMemo(() => {
+        let totalBudget = 0;
+        let totalSpent = 0;
+
+        for (const r of activeReports) {
+            totalBudget += calculateEffectiveBudget(r);
+            totalSpent += calculateAmountSpent(r);
+        }
+
+        const totalRemaining = totalBudget - totalSpent;
+        const usedPercent =
+            totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+
+        return {
+            totalBudget,
+            totalSpent,
+            totalRemaining,
+            usedPercent,
+        };
+    }, [activeReports]);
 
     const fetchReports = useCallback(async (email: string) => {
         try {
@@ -206,8 +236,6 @@ const ReportsPage = () => {
     };
 
     const handleSkipSmsForNow = () => {
-        // Clears the popup queue for the current session without marking messages as processed,
-        // so future re-opens of the app will surface them again.
         setPendingSmsQueue([]);
     };
 
@@ -217,7 +245,6 @@ const ReportsPage = () => {
             await createReport({ title, budget: amount });
             setIsModalOpen(false);
 
-            // Refetch reports after adding
             if (auth.currentUser?.email) {
                 await fetchReports(auth.currentUser.email);
             }
@@ -245,78 +272,258 @@ const ReportsPage = () => {
         <div className="reports-container">
             <Alert alert={alert} />
             <Loader visible={loading} />
-            <ReportsHamburger
-                showDeleted={showDeleted}
-                toggleShowDeleted={toggleShowDeleted}
-                smsTrackingEnabled={smsTrackingEnabled}
-                toggleSmsTracking={toggleSmsTracking}
-                showContacts={() => setShowContacts(true)}
-                showCategories={() => setShowCategories(true)}
-                handleLogout={handleLogout}
-            />
-            <div className="reports-topbar">
-                {user?.photoURL && user?.displayName ?
-                    <span className="reports-profile">
-                        <img src={user.photoURL} className="reports-profile-icon" />
-                    </span>
-                    :
-                    <FiUsers className="reports-profile-icon" />}
-            </div>
 
-            <h2 className="reports-title">{t("reports.title")}</h2>
+            {/* Top Navigation Bar */}
+            <header className="reports-topbar">
+                <div className="reports-user-chip">
+                    {user?.photoURL ? (
+                        <img
+                            src={user.photoURL}
+                            alt={user.displayName || "User"}
+                            className="reports-profile-icon"
+                        />
+                    ) : (
+                        <div className="reports-profile-fallback">
+                            <FiUsers size={18} />
+                        </div>
+                    )}
+                    {user?.displayName && (
+                        <span className="reports-user-name">{user.displayName}</span>
+                    )}
+                </div>
 
-            <div className="reports-list-container">
-                <div className="reports-list">
-                    {reports.map((report) => {
-                        const percentage = Math.min((calculateAmountSpent(report) / (report.budget + calculateTopupAmount(report))) * 100, 100);
-                        let progressColor = "#28a745";
-                        if (percentage > 75) {
-                            progressColor = "#dc3545";
-                        } else if (percentage > 50) {
-                            progressColor = "#ffc107";
-                        }
+                <ReportsHamburger
+                    showDeleted={showDeleted}
+                    toggleShowDeleted={toggleShowDeleted}
+                    smsTrackingEnabled={smsTrackingEnabled}
+                    toggleSmsTracking={toggleSmsTracking}
+                    showContacts={() => setShowContacts(true)}
+                    showCategories={() => setShowCategories(true)}
+                    handleLogout={handleLogout}
+                />
+            </header>
 
-                        return (
-                            <div className={`report-card ${report.deleted && "report-deleted"}`} key={report.id} onClick={() => navigate(`/reports/${report.id}`)}>
-                                <div className="report-header">
-                                    <h3 className="report-title">{report.title}</h3>
+            <main className="reports-main">
+                {/* Portfolio Overview Hero Card */}
+                {activeReports.length > 0 && (
+                    <section className="reports-overview-card">
+                        <div className="overview-top-row">
+                            <span className="overview-label">
+                                {t("reports.totalBalanceLabel")}
+                            </span>
+                            <span className="overview-count-pill">
+                                {t("reports.activeReportsCount", {
+                                    count: activeReports.length,
+                                })}
+                            </span>
+                        </div>
 
-                                    {isShared(report, user?.email) && (
-                                        <span className="shared-badge">
-                                            <FiShare2 size={14} /> {t("reports.sharedBadge")}
-                                        </span>
-                                    )}
-                                </div>
+                        <div className="overview-balance-amount">
+                            ₹{portfolioStats.totalRemaining.toLocaleString()}
+                        </div>
 
-                                <div className="report-info">
-                                    <p className="report-budget">
-                                        {t("reports.budgetLabel")} : ₹{report.budget.toLocaleString()}
-                                    </p>
-                                    <p className="report-spent">
-                                        {t("reports.spentLabel")} : ₹{calculateAmountSpent(report).toLocaleString()}
-                                    </p>
-                                </div>
-
-                                <div className="progress-bar">
-                                    <div
-                                        className="progress-fill"
-                                        style={{ width: `${percentage}%`, backgroundColor: progressColor }}
-                                    ></div>
+                        <div className="overview-metrics-row">
+                            <div className="overview-metric">
+                                <span className="overview-metric-icon budget">
+                                    <FiTrendingUp size={14} />
+                                </span>
+                                <div>
+                                    <span className="overview-metric-label">
+                                        {t("reports.totalBudgetLabel")}
+                                    </span>
+                                    <span className="overview-metric-value">
+                                        ₹{portfolioStats.totalBudget.toLocaleString()}
+                                    </span>
                                 </div>
                             </div>
-                        );
-                    })}
-                    {reports.length === 0 &&
-                        <div className="no-reports-container">
-                            <FiFileText size={48} className="no-reports-icon" />
-                            <p className="no-reports-text">{t("reports.noReports")}</p>
-                            <p className="no-reports-subtext">{t("reports.noReportsSubtext")}</p>
-                        </div>}
+
+                            <div className="overview-metric-divider" />
+
+                            <div className="overview-metric">
+                                <span className="overview-metric-icon spent">
+                                    <FiTrendingDown size={14} />
+                                </span>
+                                <div>
+                                    <span className="overview-metric-label">
+                                        {t("reports.totalSpentLabel")}
+                                    </span>
+                                    <span className="overview-metric-value">
+                                        ₹{portfolioStats.totalSpent.toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="overview-progress-wrap">
+                            <div className="overview-progress-track">
+                                <div
+                                    className="overview-progress-fill"
+                                    style={{ width: `${portfolioStats.usedPercent}%` }}
+                                />
+                            </div>
+                            <span className="overview-progress-text">
+                                {t("reports.usedPercent", {
+                                    percent: Math.round(portfolioStats.usedPercent),
+                                })}
+                            </span>
+                        </div>
+                    </section>
+                )}
+
+                {/* Section Header */}
+                <div className="reports-section-header">
+                    <h2 className="reports-title">{t("reports.title")}</h2>
                 </div>
-            </div>
+
+                {/* Reports List */}
+                <div className="reports-list-container">
+                    <div className="reports-list">
+                        {reports.map((report) => {
+                            const spent = calculateAmountSpent(report);
+                            const effectiveBudget = calculateEffectiveBudget(report);
+                            const remaining = effectiveBudget - spent;
+                            const percentage =
+                                effectiveBudget > 0
+                                    ? Math.min((spent / effectiveBudget) * 100, 100)
+                                    : 0;
+
+                            let statusClass = "healthy";
+                            if (percentage > 75) {
+                                statusClass = "danger";
+                            } else if (percentage > 50) {
+                                statusClass = "warning";
+                            }
+
+                            const formattedDate = report.createdAt
+                                ? new Date(report.createdAt).toLocaleDateString(
+                                    locale === "hi" ? "hi-IN" : "en-US",
+                                    {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                    }
+                                )
+                                : "";
+
+                            return (
+                                <div
+                                    className={`report-card ${report.deleted ? "report-deleted" : ""
+                                        }`}
+                                    key={report.id}
+                                    onClick={() => navigate(`/reports/${report.id}`)}
+                                >
+                                    <div className="report-header">
+                                        <div className="report-title-group">
+                                            <div className={`report-icon-box ${statusClass}`}>
+                                                <FiFolder size={18} />
+                                            </div>
+                                            <div className="report-title-meta">
+                                                <h3 className="report-title">{report.title}</h3>
+                                                {formattedDate && (
+                                                    <span className="report-date">
+                                                        {formattedDate}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="report-header-right">
+                                            {report.deleted && (
+                                                <span className="deleted-badge">
+                                                    {t("reports.deletedBadge")}
+                                                </span>
+                                            )}
+                                            {isShared(report, user?.email) && (
+                                                <span className="shared-badge">
+                                                    <FiShare2 size={12} />{" "}
+                                                    {t("reports.sharedBadge")}
+                                                </span>
+                                            )}
+                                            <FiChevronRight
+                                                size={18}
+                                                className="report-chevron"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="report-metrics-grid">
+                                        <div className="report-metric-box">
+                                            <span className="report-metric-label">
+                                                {t("reports.budgetLabel")}
+                                            </span>
+                                            <span className="report-metric-value">
+                                                ₹{effectiveBudget.toLocaleString()}
+                                            </span>
+                                        </div>
+
+                                        <div className="report-metric-box">
+                                            <span className="report-metric-label">
+                                                {t("reports.spentLabel")}
+                                            </span>
+                                            <span className="report-metric-value spent">
+                                                ₹{spent.toLocaleString()}
+                                            </span>
+                                        </div>
+
+                                        <div className="report-metric-box">
+                                            <span className="report-metric-label">
+                                                {t("reports.remainingLabel")}
+                                            </span>
+                                            <span
+                                                className={`report-metric-value ${remaining < 0 ? "over" : "remaining"
+                                                    }`}
+                                            >
+                                                ₹{remaining.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="report-progress-footer">
+                                        <div className="progress-bar">
+                                            <div
+                                                className={`progress-fill ${statusClass}`}
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+                                        <span className={`report-percent-badge ${statusClass}`}>
+                                            {t("reports.usedPercent", {
+                                                percent: Math.round(percentage),
+                                            })}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {reports.length === 0 && (
+                            <div className="no-reports-container">
+                                <div className="no-reports-icon-circle">
+                                    <FiFileText size={32} />
+                                </div>
+                                <p className="no-reports-text">{t("reports.noReports")}</p>
+                                <p className="no-reports-subtext">
+                                    {t("reports.noReportsSubtext")}
+                                </p>
+                                <button
+                                    type="button"
+                                    className="no-reports-cta"
+                                    onClick={() => setIsModalOpen(true)}
+                                >
+                                    <FiPlus size={18} />
+                                    {t("reports.createFirstButton")}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </main>
 
             {/* Floating Add Button */}
-            <button className="add-report-btn" onClick={() => setIsModalOpen(true)}>
+            <button
+                className="add-report-btn"
+                aria-label={t("reports.addReportHeader")}
+                onClick={() => setIsModalOpen(true)}
+            >
                 <FiPlus size={24} />
             </button>
 
@@ -347,3 +554,4 @@ const ReportsPage = () => {
 };
 
 export default ReportsPage;
+
