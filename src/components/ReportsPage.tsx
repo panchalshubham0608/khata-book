@@ -60,9 +60,9 @@ const ReportsPage = () => {
         }
     }, [showAlert, showDeleted, t]);
 
-    const runSmsScan = useCallback(async (email: string, includeDummyOnLoad = false) => {
-        if (!includeDummyOnLoad && !isSmsTrackingEnabled(email)) return;
-        const detected = await scanUnprocessedSmsTransactions(email, includeDummyOnLoad);
+    const runSmsScan = useCallback(async (email: string) => {
+        if (!isSmsTrackingEnabled(email)) return;
+        const detected = await scanUnprocessedSmsTransactions(email);
         if (detected.length > 0) {
             setPendingSmsQueue(detected);
         }
@@ -75,7 +75,7 @@ const ReportsPage = () => {
                 const enabled = isSmsTrackingEnabled(currentUser.email);
                 setSmsTrackingEnabledState(enabled);
                 fetchReports(currentUser.email);
-                runSmsScan(currentUser.email, true);
+                runSmsScan(currentUser.email);
             } else {
                 setReports([]);
                 setLoading(false);

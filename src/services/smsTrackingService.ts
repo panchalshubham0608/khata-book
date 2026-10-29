@@ -93,8 +93,7 @@ export function markSmsProcessedBatch(
 }
 
 export async function scanUnprocessedSmsTransactions(
-  userEmail?: string | null,
-  includeDummyOnLoad = false
+  userEmail?: string | null
 ): Promise<PendingSmsTransaction[]> {
   if (!userEmail) {
     return [];
@@ -112,43 +111,6 @@ export async function scanUnprocessedSmsTransactions(
     } catch {
       messages = [];
     }
-  }
-
-  if (includeDummyOnLoad) {
-    const now = Date.now();
-    messages = [
-      {
-        id: "dummy-v2-debit-1",
-        sender: "VM-HDFCBK",
-        body: "Rs. 680.00 debited from a/c **1234 on 29-10-26 to VPA zomato@upi (UPI Ref No 630311223344).",
-        timestamp: now - 50 * 60 * 1000,
-      },
-      {
-        id: "dummy-v2-credit-1",
-        sender: "AD-SBIINB",
-        body: "Your a/c no. XX8901 is credited by Rs. 3,200.00 on 29-10-26 by a/c linked to VPA ankit@okicici (IMPS Ref 630319876543).",
-        timestamp: now - 35 * 60 * 1000,
-      },
-      {
-        id: "dummy-v2-debit-2",
-        sender: "AX-ICICIB",
-        body: "INR 1,499.00 spent on ICICI Bank Card XX4321 at Flipkart on 29-10-26. Avl Lmt: INR 83,501.00.",
-        timestamp: now - 22 * 60 * 1000,
-      },
-      {
-        id: "dummy-v2-debit-3",
-        sender: "JD-AXISBK",
-        body: "Rs. 240.00 debited from Axis Bank A/c no. XX5543 on 29-10-26 to VPA blinkit@paytm (UPI Ref 630355667788).",
-        timestamp: now - 12 * 60 * 1000,
-      },
-      {
-        id: "dummy-v2-credit-2",
-        sender: "VK-KOTAKB",
-        body: "Rs. 1,500.00 received in your Kotak A/c XX7712 from VPA neha@oksbi on 29-10-26 (UPI Ref 630399887766).",
-        timestamp: now - 4 * 60 * 1000,
-      },
-      ...messages,
-    ];
   }
 
   const processedIds = getProcessedSmsIds(userEmail);
