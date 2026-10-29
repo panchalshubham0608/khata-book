@@ -2,21 +2,31 @@
 .edit-expense-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 16px;
     z-index: 999;
 }
 
 /* Modal Container */
 .edit-expense-container {
-    width: 280px;
-    background: white;
+    width: 100%;
+    max-width: 380px;
+    background: #ffffff;
     padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-    animation: cd-popup 0.2s ease-out;
+    border-radius: 22px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.25);
+    animation: cd-popup 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-sizing: border-box;
+    font-family: "Plus Jakarta Sans", "Inter", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .edit-expense-header {
@@ -25,30 +35,83 @@
     justify-content: space-between;
 }
 
-.edit-expense-header button {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
+.edit-expense-container h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.015em;
 }
 
-.edit-expense-container h2 {
-    margin: 0 0 8px 0;
+.edit-expense-header button {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.edit-expense-header button:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.edit-expense-section {
+    display: flex;
+    flex-direction: column;
 }
 
 .edit-expense-container input {
-    font-size: 16px;
+    font-size: 15px;
     width: 100%;
+    font-family: inherit;
 }
 
 .edit-expense-footer {
-    margin-top: 10px;
+    margin-top: 4px;
+}
+
+.edit-expense-footer .d-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .edit-expense-footer button {
-    font-size: 16px;
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.12s ease;
 }
 
 .edit-expense-footer .btn-cancel {
-    background-color: #ff4d4d;
-    color: white;
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.edit-expense-footer .btn-cancel:hover {
+    background-color: #fee2e2;
+}
+
+.edit-expense-footer .btn-add {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.edit-expense-footer .btn-add:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
 }

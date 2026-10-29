@@ -5,7 +5,8 @@ import fs from 'fs';
 import path from 'path';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === "android" ? "./" : "/khata-book/",
   plugins: [
     react(),
     VitePWA({
@@ -33,7 +34,6 @@ export default defineConfig({
       }
     })
   ],
-  base: "/khata-book/",
   server: (() => {
     const devHttps = process.env.DEV_HTTPS === 'true' || process.env.DEV_HTTPS === '1' || process.env.DEV_HTTPS === 'true';
     if (!devHttps) return { host: true };
@@ -56,4 +56,4 @@ export default defineConfig({
     // Let Vite use its default self-signed/https behaviour
     return { host: true, https: {} };
   })(),
-})
+}))

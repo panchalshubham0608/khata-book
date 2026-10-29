@@ -1,20 +1,50 @@
 // ReportDetailsPage.tsx
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FiShare2, FiPlus, FiFileText } from "react-icons/fi";
-import { FiArrowLeft } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import {
+    FiShare2,
+    FiPlus,
+    FiFileText,
+    FiSearch,
+    FiX,
+    FiCalendar,
+    FiAlertCircle,
+    FiTrendingDown,
+    FiTrendingUp,
+    FiLayers,
+    FiArchive,
+} from "react-icons/fi";
+import { useNavigate, useParams } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
 import ReportHamburgerMenu from "./ReportDetailsHamburger";
 import "./ReportDetailsPage.css";
-import { useParams } from "react-router-dom";
 import { auth } from "../firebase/firebase";
-import type { Report, Category } from "../firebase/types";
-import { createExpense, deleteExpense, deleteReport, getReport, shareReport, unshareReport, updateExense } from "../firebase/reportService";
-import { getCategories } from "../firebase/categoryService";
+import type { Report } from "../firebase/types";
+import {
+    archiveReport,
+    createExpense,
+    deleteExpense,
+    deleteReport,
+    getReport,
+    restoreReport,
+    shareReport,
+    unarchiveReport,
+    unshareReport,
+    updateExense,
+} from "../firebase/reportService";
+import { getUserProfile } from "../firebase/userProfileService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, isOwner, getRemainingDays, calculateAmountSpent, calculateTopupAmount } from "../utils/reportUtils";
+import {
+    isShared,
+    isOwner,
+    isArchived,
+    getRemainingDays,
+    calculateAmountSpent,
+    calculateTopupAmount,
+    calculateEffectiveBudget,
+} from "../utils/reportUtils";
+import { backupReportToGoogleSheets } from "../utils/googleBackup";
 import { type User } from "firebase/auth";
 import EditExpense from "./EditExpense";
 import ExpenseRow from "./ExpenseRow";
@@ -28,12 +58,12 @@ const ReportDetailsPage = () => {
 
     const [user, setUser] = useState<User | null>(null);
     const [report, setReport] = useState<Report | null>(null);
+    const [archivedReports, setArchivedReports] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-    const [categoryMap, setCategoryMap] = useState<Record<string, Category>>({});
 
     useEffect(() => {
         if (!reportId) return;
@@ -41,13 +71,24 @@ const ReportDetailsPage = () => {
             if (user) setUser(user);
             if (!user?.email) {
                 setReport(null);
+                setArchivedReports([]);
                 setLoading(false);
                 return;
             }
 
             try {
                 setLoading(true);
-                const fetched = await getReport(reportId);
+                const [fetched, profile] = await Promise.all([
+                    getReport(reportId),
+                    getUserProfile(user.email).catch(() => ({
+                        id: user.email!,
+                        owner: user.email!,
+                        archivedReports: [] as string[],
+                        updatedAt: "",
+                    })),
+                ]);
+
+                setArchivedReports(profile.archivedReports);
 
                 if (!fetched) {
                     showAlert(t("reportDetails.reportNotFound"), "error");
@@ -76,127 +117,155 @@ const ReportDetailsPage = () => {
         return () => unsubscribe();
     }, [reportId, showAlert, t]);
 
-    useEffect(() => {
-        let mounted = true;
-        if (!user) return;
-
-        (async () => {
-            try {
-                const categories = await getCategories();
-                if (!mounted) return;
-                const map: Record<string, Category> = {};
-                categories.forEach((category) => {
-                    map[category.id] = category;
-                });
-                setCategoryMap(map);
-            } catch (err) {
-                console.error(err);
+    const createExpenseHelper = useCallback(
+        async (
+            title: string,
+            amount: number,
+            label: string,
+            categories?: string[]
+        ) => {
+            if (!user || !user.email || !user.displayName) {
+                showAlert(t("reportDetails.ownerMissing"), "error");
+                return;
             }
-        })();
-
-        return () => { mounted = false; };
-    }, [user]);
-
-    const createExpenseHelper = useCallback(async (title: string, amount: number, label: string, categories?: string[]) => {
-        if (!user || !user.email || !user.displayName) {
-            showAlert(t("reportDetails.ownerMissing"), "error");
-            return;
-        }
-        if (!reportId) {
-            showAlert(t("reportDetails.reportIdMissing"), "error");
-            return;
-        }
-
-        try {
-            setLoading(true);
-            await createExpense({
-                reportId,
-                expenseTitle: title,
-                expenseAmount: amount,
-                authorEmail: user.email,
-                authorDisplayName: user.displayName,
-                categories
-            });
-
-            const updated = await getReport(reportId);
-            if (updated) setReport(updated);
-
-            setOpenExpenseModal(false);
-            showAlert(t("reportDetails.addSuccess", { label }), "success");
-        } catch (err) {
-            console.error(err);
-            showAlert(t("reportDetails.addError", { label }), "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [reportId, showAlert, user, t]);
-
-    const handleAddExpense = useCallback(async (title: string, amount: number, categories?: string[]) => await createExpenseHelper(title, -1 * Math.abs(amount), t("reportDetails.expenseLabel"), categories), [createExpenseHelper, t]);
-    const handleTopup = useCallback(async (amount: number) => await createExpenseHelper(t("reportDetails.action.topup"), Math.abs(amount), t("reportDetails.action.topup")), [createExpenseHelper, t]);
-
-    const manageEmailShare = useCallback(async (
-        email: string,
-        action: "add" | "remove",
-        successLabel: string
-    ) => {
-        if (!reportId) {
-            showAlert(t("reportDetails.reportIdMissing"), "error");
-            return;
-        }
-
-        if (!email || !email.includes("@")) {
-            showAlert(t("reportDetails.invalidEmail"), "error");
-            return;
-        }
-
-        try {
-            setLoading(true);
-            if (action === "add") await shareReport(reportId, email);
-            else await unshareReport(reportId, email);
-
-            const updated = await getReport(reportId);
-            if (updated) setReport(updated);
-
-            showAlert(t("reportDetails.addSuccess", { label: successLabel }), "success");
-        } catch (err) {
-            console.error(err);
-            showAlert(t("reportDetails.emailActionError", { action: successLabel }), "error");
-        } finally {
-            setLoading(false);
-        }
-    }, [reportId, showAlert, t]);
-
-    const handleAddEmail = useCallback(async (email: string) =>
-        await manageEmailShare(email, "add", t("reportDetails.action.add")), [manageEmailShare]);
-    const handleRemoveEmail = useCallback(async (email: string) =>
-        await manageEmailShare(email, "remove", t("reportDetails.action.remove")), [manageEmailShare]);
-
-    const handleEditExpense = useCallback(async (title: string, amount: number) => {
-        try {
             if (!reportId) {
                 showAlert(t("reportDetails.reportIdMissing"), "error");
                 return;
             }
-            if (!selectedExpenseId) {
-                showAlert(t("reportDetails.invalidExpenseId"), "error");
+
+            try {
+                setLoading(true);
+                await createExpense({
+                    reportId,
+                    expenseTitle: title,
+                    expenseAmount: amount,
+                    authorEmail: user.email,
+                    authorDisplayName: user.displayName,
+                    categories,
+                });
+
+                const updated = await getReport(reportId);
+                if (updated) setReport(updated);
+
+                setOpenExpenseModal(false);
+                showAlert(t("reportDetails.addSuccess", { label }), "success");
+            } catch (err) {
+                console.error(err);
+                showAlert(t("reportDetails.addError", { label }), "error");
+            } finally {
+                setLoading(false);
+            }
+        },
+        [reportId, showAlert, user, t]
+    );
+
+    const handleAddExpense = useCallback(
+        async (title: string, amount: number, categories?: string[]) =>
+            await createExpenseHelper(
+                title,
+                -1 * Math.abs(amount),
+                t("reportDetails.expenseLabel"),
+                categories
+            ),
+        [createExpenseHelper, t]
+    );
+
+    const handleTopup = useCallback(
+        async (amount: number) =>
+            await createExpenseHelper(
+                t("reportDetails.action.topup"),
+                Math.abs(amount),
+                t("reportDetails.action.topup")
+            ),
+        [createExpenseHelper, t]
+    );
+
+    const manageEmailShare = useCallback(
+        async (email: string, action: "add" | "remove", successLabel: string) => {
+            if (!reportId) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
                 return;
             }
 
-            setLoading(true);
-            await updateExense({ reportId, expenseId: selectedExpenseId, title, amount });
+            if (!email || !email.includes("@")) {
+                showAlert(t("reportDetails.invalidEmail"), "error");
+                return;
+            }
 
-            const updated = await getReport(reportId);
-            if (updated) setReport(updated);
+            try {
+                setLoading(true);
+                if (action === "add") await shareReport(reportId, email);
+                else await unshareReport(reportId, email);
 
-            showAlert(t("reportDetails.editSuccess"), "success");
-        } catch (err) {
-            console.log(err);
-            showAlert(t("reportDetails.editError"), "error");
-        } finally {
-            setSelectedExpenseId(null);
-            setLoading(false);
-        }
-    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, t]);
+                const updated = await getReport(reportId);
+                if (updated) setReport(updated);
+
+                showAlert(
+                    t("reportDetails.addSuccess", { label: successLabel }),
+                    "success"
+                );
+            } catch (err) {
+                console.error(err);
+                showAlert(
+                    t("reportDetails.emailActionError", { action: successLabel }),
+                    "error"
+                );
+            } finally {
+                setLoading(false);
+            }
+        },
+        [reportId, showAlert, t]
+    );
+
+    const handleAddEmail = useCallback(
+        async (email: string) =>
+            await manageEmailShare(email, "add", t("reportDetails.action.add")),
+        [manageEmailShare, t]
+    );
+    const handleRemoveEmail = useCallback(
+        async (email: string) =>
+            await manageEmailShare(
+                email,
+                "remove",
+                t("reportDetails.action.remove")
+            ),
+        [manageEmailShare, t]
+    );
+
+    const handleEditExpense = useCallback(
+        async (title: string, amount: number) => {
+            try {
+                if (!reportId) {
+                    showAlert(t("reportDetails.reportIdMissing"), "error");
+                    return;
+                }
+                if (!selectedExpenseId) {
+                    showAlert(t("reportDetails.invalidExpenseId"), "error");
+                    return;
+                }
+
+                setLoading(true);
+                await updateExense({
+                    reportId,
+                    expenseId: selectedExpenseId,
+                    title,
+                    amount,
+                });
+
+                const updated = await getReport(reportId);
+                if (updated) setReport(updated);
+
+                showAlert(t("reportDetails.editSuccess"), "success");
+            } catch (err) {
+                console.log(err);
+                showAlert(t("reportDetails.editError"), "error");
+            } finally {
+                setSelectedExpenseId(null);
+                setLoading(false);
+            }
+        },
+        [reportId, selectedExpenseId, showAlert, t]
+    );
 
     const handleDeleteExpense = useCallback(async () => {
         try {
@@ -223,7 +292,7 @@ const ReportDetailsPage = () => {
             setSelectedExpenseId(null);
             setLoading(false);
         }
-    }, [reportId, selectedExpenseId, setSelectedExpenseId, setLoading, showAlert, t]);
+    }, [reportId, selectedExpenseId, showAlert, t]);
 
     const handleDeleteReport = async () => {
         try {
@@ -243,6 +312,84 @@ const ReportDetailsPage = () => {
         }
     };
 
+    const handleRestoreReport = useCallback(async () => {
+        try {
+            if (!reportId) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await restoreReport(reportId);
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+            showAlert(t("trash.restoreSuccess"), "success");
+        } catch (err) {
+            console.error(err);
+            showAlert(t("trash.restoreError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, showAlert, t]);
+
+    const handleArchiveReport = useCallback(async () => {
+        try {
+            if (!reportId || !user?.email) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await archiveReport(reportId, user.email);
+            setArchivedReports((prev) =>
+                prev.includes(reportId) ? prev : [...prev, reportId]
+            );
+            navigate("/reports");
+        } catch (err) {
+            console.error(err);
+            showAlert(t("reportDetails.reportArchiveError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, user, navigate, showAlert, t]);
+
+    const handleUnarchiveReport = useCallback(async () => {
+        try {
+            if (!reportId || !user?.email) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await unarchiveReport(reportId, user.email);
+            setArchivedReports((prev) => prev.filter((id) => id !== reportId));
+            showAlert(t("reportDetails.reportUnarchiveSuccess"), "success");
+        } catch (err) {
+            console.error(err);
+            showAlert(t("reportDetails.reportUnarchiveError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, user, showAlert, t]);
+
+    const handleBackup = useCallback(async () => {
+        if (!report) {
+            showAlert(t("reportDetails.backupUnavailable"), "error");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await backupReportToGoogleSheets(report);
+            showAlert(t("reportDetails.backupSuccess"), "success");
+        } catch (error) {
+            console.error(error);
+            showAlert(t("reportDetails.backupError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [report, showAlert, t]);
+
     useEffect(() => {
         const handler = window.setTimeout(() => {
             setDebouncedSearchTerm(searchTerm.trim().toLowerCase());
@@ -251,52 +398,19 @@ const ReportDetailsPage = () => {
         return () => window.clearTimeout(handler);
     }, [searchTerm]);
 
-    const parseSearchQuery = (query: string) => {
-        const tokens = query.trim().split(/\s+/).filter(Boolean);
-        const categoryTerms: string[] = [];
-        const textTerms: string[] = [];
-
-        tokens.forEach((token) => {
-            const match = token.match(/^c[:=](.+)$/i);
-            if (match?.[1]) {
-                categoryTerms.push(match[1].toLowerCase());
-            } else {
-                textTerms.push(token.toLowerCase());
-            }
-        });
-
-        return {
-            categoryTerms,
-            text: textTerms.join(" "),
-        };
-    };
-
     const filteredExpenses = useMemo(() => {
         if (!report) return [];
         if (!debouncedSearchTerm) return report.expenses;
 
-        const { categoryTerms, text } = parseSearchQuery(debouncedSearchTerm);
-
-        return report.expenses.filter((expense) => {
-            const categoryNames = (expense.categories || []).map((categoryId) => {
-                return categoryMap[categoryId]?.name?.toLowerCase() ?? categoryId.toLowerCase();
-            });
-
-            const categoryMatch = categoryTerms.length === 0 || categoryTerms.every((term) =>
-                categoryNames.some((name) => name.includes(term))
-            );
-
-            const textMatch = !text || [
+        return report.expenses.filter((expense) =>
+            [
                 expense.title.toLowerCase(),
                 expense.authorDisplayName.toLowerCase(),
                 expense.authorEmail.toLowerCase(),
                 expense.amount.toString(),
-                ...categoryNames,
-            ].some((value) => value.includes(text));
-
-            return categoryMatch && textMatch;
-        });
-    }, [report, debouncedSearchTerm, categoryMap]);
+            ].some((value) => value.includes(debouncedSearchTerm))
+        );
+    }, [report, debouncedSearchTerm]);
 
     const filteredTotals = useMemo(() => {
         return filteredExpenses.reduce(
@@ -315,123 +429,327 @@ const ReportDetailsPage = () => {
     if (!report) return <Loader visible={true} />;
 
     const topupAmount = calculateTopupAmount(report);
+    const effectiveBudget = calculateEffectiveBudget(report);
     const spentAmount = calculateAmountSpent(report);
-    const remainingBudget = report.budget + topupAmount - spentAmount;
-    const selectedExpense = selectedExpenseId && report.expenses.find(e => e.id === selectedExpenseId);
-    const canActOnExpense = isOwner(report, user?.email) && !report.deleted;
+    const remainingBudget = effectiveBudget - spentAmount;
+    const rawPercent =
+        effectiveBudget > 0
+            ? (spentAmount / effectiveBudget) * 100
+            : spentAmount > 0
+            ? 100
+            : 0;
+    const progressWidth = Math.min(Math.max(rawPercent, 0), 100);
+    const displayPercent = Math.round(rawPercent);
+
+    const formattedCreatedDate = new Date(report.createdAt).toLocaleDateString(
+        locale === "hi" ? "hi-IN" : "en-IN",
+        {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        }
+    );
+
+    const selectedExpense =
+        selectedExpenseId &&
+        report.expenses.find((e) => e.id === selectedExpenseId);
+    const canActOnExpense = Boolean(
+        isOwner(report, user?.email) && !report.deleted
+    );
+    const canRestoreReport = Boolean(
+        isOwner(report, user?.email) && report.deleted
+    );
+    const canArchiveReport = Boolean(!report.deleted);
+    const reportArchived = isArchived(report.id, archivedReports);
 
     return (
         <div className="report-details-container">
             <Alert alert={alert} />
             <Loader visible={loading} />
-            <div className="report-header-row">
-                <Link to="/reports" className="back-button">
-                    <FiArrowLeft size={20} />
-                    <span>{t("reportDetails.back")}</span>
-                </Link>
-            </div>
-            {isOwner(report, user?.email) && !report.deleted &&
-                <ReportHamburgerMenu
-                    sharedWith={report.sharedWith}
-                    onAddEmail={handleAddEmail}
-                    onRemoveEmail={handleRemoveEmail}
-                    onDeleteReport={handleDeleteReport}
-                    onTopup={handleTopup}
-                />}
 
-            {report.deletedAt && <p className="deleted-message">
-                {t("reportDetails.deletedMessage", { days: getRemainingDays(report.deletedAt) })}</p>}
-
-            <div className="report-header">
-                <h2 className="report-title">{report.title}</h2>
-                {isShared(report, user?.email) && (
-                    <span className="shared-badge">
-                        <FiShare2 size={16} /> {t("reports.sharedBadge")}
-                    </span>
+            <main className="report-details-main">
+                {report.deletedAt && (
+                    <div className="deleted-message-banner">
+                        <FiAlertCircle size={18} className="deleted-banner-icon" />
+                        <span>
+                            {t("reportDetails.deletedMessage", {
+                                days: getRemainingDays(report.deletedAt),
+                            })}
+                        </span>
+                    </div>
                 )}
-            </div>
 
-            <div className="report-summary">
-                <div className="chips-container">
-                    <span className="chip">{t("reportDetails.budgetChip", { amount: report.budget.toLocaleString() })}</span>
-                    <span className="chip spent">{t("reportDetails.spentChip", { amount: spentAmount.toLocaleString() })}</span>
-                    <span className="chip remaining">{t("reportDetails.remainingChip", { amount: remainingBudget.toLocaleString() })}</span>
-                    <span className="chip date">{t("reportDetails.createdChip", { date: new Date(report.createdAt).toLocaleDateString(locale === "hi" ? "hi-IN" : "en-US") })}</span>
-                    <span className="chip topup">{t("reportDetails.topupChip", { amount: topupAmount.toLocaleString() })}</span>
-                </div>
-            </div>
+                {/* Report Overview Hero Card */}
+                <section className="report-hero-card">
+                    <div className="report-hero-top">
+                        <div className="report-hero-title-group">
+                            <h1 className="report-hero-title">{report.title}</h1>
+                            <span className="report-hero-date">
+                                <FiCalendar size={12} />
+                                {formattedCreatedDate}
+                            </span>
+                        </div>
 
-            <div className="search-container">
-                <input
-                    className="search-input"
-                    type="search"
-                    value={searchTerm}
-                    placeholder={t("reportDetails.searchPlaceholder")}
-                    aria-label={t("reportDetails.searchPlaceholder")}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
+                        <div className="report-hero-nav-right">
+                            {reportArchived && (
+                                <span className="report-hero-badge archived">
+                                    <FiArchive size={11} /> {t("reports.archivedBadge")}
+                                </span>
+                            )}
+                            {isShared(report, user?.email) && (
+                                <span className="report-hero-badge shared">
+                                    <FiShare2 size={12} /> {t("reports.sharedBadge")}
+                                </span>
+                            )}
+                            {report.deleted && (
+                                <span className="report-hero-badge deleted">
+                                    {t("reports.deletedBadge")}
+                                </span>
+                            )}
+                            <ReportHamburgerMenu
+                                canManage={canActOnExpense}
+                                canArchive={canArchiveReport}
+                                canRestore={canRestoreReport}
+                                isArchived={reportArchived}
+                                sharedWith={report.sharedWith}
+                                onAddEmail={handleAddEmail}
+                                onRemoveEmail={handleRemoveEmail}
+                                onDeleteReport={handleDeleteReport}
+                                onRestoreReport={handleRestoreReport}
+                                onArchiveReport={handleArchiveReport}
+                                onUnarchiveReport={handleUnarchiveReport}
+                                onTopup={handleTopup}
+                                onBackup={handleBackup}
+                            />
+                        </div>
+                    </div>
 
-            {searchTerm.trim() !== "" && (
-                <div className="filtered-summary chips-container">
-                    <span className="chip spent">
-                        {t("reportDetails.filteredSpentChip", { amount: filteredTotals.spent.toLocaleString() })}
-                    </span>
-                    <span className="chip topup">
-                        {t("reportDetails.filteredTopupChip", { amount: filteredTotals.topup.toLocaleString() })}
-                    </span>
-                </div>
+                    <div className="report-hero-balance-block">
+                        <div className="report-hero-balance-row">
+                            <span className="report-hero-balance-label">
+                                {t("reports.remainingLabel")}
+                            </span>
+                            <span className="report-hero-percent-pill">
+                                {t("reports.usedPercent", {
+                                    percent: displayPercent,
+                                })}
+                            </span>
+                        </div>
+                        <div
+                            className={`report-hero-balance-amount ${
+                                remainingBudget < 0 ? "is-negative" : ""
+                            }`}
+                        >
+                            {remainingBudget < 0 ? "-" : ""}₹
+                            {Math.abs(remainingBudget).toLocaleString("en-IN")}
+                        </div>
+                    </div>
+
+                    <div className="report-hero-progress-track">
+                        <div
+                            className="report-hero-progress-fill"
+                            style={{ width: `${progressWidth}%` }}
+                        />
+                    </div>
+
+                    <div className="report-hero-metrics">
+                        <div className="report-hero-metric">
+                            <span className="report-hero-metric-icon budget">
+                                <FiLayers size={14} />
+                            </span>
+                            <div className="report-hero-metric-text">
+                                <span className="report-hero-metric-label">
+                                    {t("reports.budgetLabel")}
+                                </span>
+                                <span className="report-hero-metric-value">
+                                    ₹{effectiveBudget.toLocaleString("en-IN")}
+                                </span>
+                                {topupAmount > 0 && (
+                                    <span className="report-hero-metric-sub">
+                                        ₹{report.budget.toLocaleString("en-IN")} + ₹
+                                        {topupAmount.toLocaleString("en-IN")}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="report-hero-metric-divider" />
+
+                        <div className="report-hero-metric">
+                            <span className="report-hero-metric-icon spent">
+                                <FiTrendingDown size={14} />
+                            </span>
+                            <div className="report-hero-metric-text">
+                                <span className="report-hero-metric-label">
+                                    {t("reports.spentLabel")}
+                                </span>
+                                <span className="report-hero-metric-value">
+                                    ₹{spentAmount.toLocaleString("en-IN")}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="report-hero-metric-divider" />
+
+                        <div className="report-hero-metric">
+                            <span className="report-hero-metric-icon topup">
+                                <FiTrendingUp size={14} />
+                            </span>
+                            <div className="report-hero-metric-text">
+                                <span className="report-hero-metric-label">
+                                    {t("reportHamburger.topup")}
+                                </span>
+                                <span className="report-hero-metric-value">
+                                    +₹{topupAmount.toLocaleString("en-IN")}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Search & Filter Bar */}
+                {report.expenses.length > 0 && (
+                    <div className="report-search-section">
+                        <div className="search-input-wrapper">
+                            <FiSearch size={17} className="search-leading-icon" />
+                            <input
+                                className="search-input"
+                                type="search"
+                                value={searchTerm}
+                                placeholder={t("reportDetails.searchPlaceholder")}
+                                aria-label={t("reportDetails.searchPlaceholder")}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="search-clear-btn"
+                                    aria-label="Clear search"
+                                    onClick={() => setSearchTerm("")}
+                                >
+                                    <FiX size={15} />
+                                </button>
+                            )}
+                        </div>
+
+                        {searchTerm.trim() !== "" && (
+                            <div className="filtered-summary-bar">
+                                <span className="filtered-pill spent">
+                                    {t("reportDetails.filteredSpentChip", {
+                                        amount: filteredTotals.spent.toLocaleString(
+                                            "en-IN"
+                                        ),
+                                    })}
+                                </span>
+                                <span className="filtered-pill topup">
+                                    {t("reportDetails.filteredTopupChip", {
+                                        amount: filteredTotals.topup.toLocaleString(
+                                            "en-IN"
+                                        ),
+                                    })}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Expenses List Section */}
+                <section className="expenses-section">
+                    <div className="expenses-section-header">
+                        <div className="expenses-header-left">
+                            <h2 className="expenses-title">
+                                {t("reportDetails.expensesTitle")}
+                            </h2>
+                            <span className="expenses-count-pill">
+                                {filteredExpenses.length}
+                            </span>
+                        </div>
+                        {canActOnExpense && report.expenses.length > 0 && (
+                            <span className="expense-note">
+                                {t("reportDetails.expensesNote")}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="expenses-list">
+                        {filteredExpenses.map((expense) => (
+                            <ExpenseRow
+                                key={expense.id}
+                                expense={expense}
+                                onAction={() => {
+                                    if (canActOnExpense && !expense.deleted) {
+                                        setSelectedExpenseId(expense.id);
+                                    }
+                                }}
+                            />
+                        ))}
+
+                        {report.expenses.length === 0 && (
+                            <div className="no-reports-container">
+                                <div className="no-reports-icon-circle">
+                                    <FiFileText size={28} />
+                                </div>
+                                <p className="no-reports-text">
+                                    {t("reportDetails.noExpenses")}
+                                </p>
+                                <p className="no-reports-subtext">
+                                    {t("reportDetails.noExpensesSubtext")}
+                                </p>
+                                {!report.deleted && (
+                                    <button
+                                        type="button"
+                                        className="no-reports-cta"
+                                        onClick={() => setOpenExpenseModal(true)}
+                                    >
+                                        <FiPlus size={16} />
+                                        {t("reportDetails.addExpenseHeader")}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {report.expenses.length > 0 &&
+                            filteredExpenses.length === 0 && (
+                                <div className="no-reports-container">
+                                    <div className="no-reports-icon-circle">
+                                        <FiSearch size={26} />
+                                    </div>
+                                    <p className="no-reports-text">
+                                        {t("reportDetails.noMatchingExpenses")}
+                                    </p>
+                                    <p className="no-reports-subtext">
+                                        {t("reportDetails.searchEmptySubtext")}
+                                    </p>
+                                </div>
+                            )}
+                    </div>
+                </section>
+            </main>
+
+            {!report.deleted && (
+                <button
+                    className="add-expense-btn"
+                    onClick={() => setOpenExpenseModal(true)}
+                    aria-label={t("reportDetails.addExpenseHeader")}
+                >
+                    <FiPlus size={24} />
+                </button>
             )}
 
-            <div className="expenses-title">
-                {t("reportDetails.expensesTitle")}
-                {canActOnExpense && <div className="expense-note">
-                    {t("reportDetails.expensesNote")}
-                </div>}
-            </div>
-
-            <div className="expenses-list">
-                {filteredExpenses.map((expense) => (
-                    <ExpenseRow key={expense.id} expense={expense} categoryMap={categoryMap} onAction={() => {
-                        if (canActOnExpense && !expense.deleted) {
-                            setSelectedExpenseId(expense.id)
-                        }
-                    }} />
-                ))}
-                {report.expenses.length === 0 &&
-                    <div className="no-reports-container">
-                        <FiFileText size={48} className="no-reports-icon" />
-                        <p className="no-reports-text">{t("reportDetails.noExpenses")}</p>
-                        <p className="no-reports-subtext">{t("reportDetails.noExpensesSubtext")}</p>
-                    </div>}
-                {report.expenses.length > 0 && filteredExpenses.length === 0 &&
-                    <div className="no-reports-container">
-                        <FiFileText size={48} className="no-reports-icon" />
-                        <p className="no-reports-text">{t("reportDetails.noMatchingExpenses")}</p>
-                        <p className="no-reports-subtext">{t("reportDetails.searchEmptySubtext")}</p>
-                    </div>}
-            </div>
-
-            {!report.deleted && <button
-                className="add-expense-btn"
-                onClick={() => setOpenExpenseModal(true)}
-            >
-                <FiPlus size={22} />
-            </button>}
-
-            {openExpenseModal &&
+            {openExpenseModal && (
                 <AmountModalInput
                     header={t("reportDetails.addExpenseHeader")}
                     titlePlaceholder={t("reportDetails.expenseNamePlaceholder")}
-                    amountPlaceholder={t("reportDetails.expenseAmountPlaceholder")}
-                    showCategories={true}
+                    amountPlaceholder={t(
+                        "reportDetails.expenseAmountPlaceholder"
+                    )}
+                    showCategories={false}
                     onReject={() => setOpenExpenseModal(false)}
                     onAccept={handleAddExpense}
                 />
-            }
+            )}
 
-            {
-                selectedExpense &&
+            {selectedExpense && (
                 <EditExpense
                     expenseTitle={selectedExpense.title}
                     expenseAmount={selectedExpense.amount.toString()}
@@ -439,9 +757,10 @@ const ReportDetailsPage = () => {
                     onDelete={handleDeleteExpense}
                     onEdit={handleEditExpense}
                 />
-            }
+            )}
         </div>
     );
 };
 
 export default ReportDetailsPage;
+

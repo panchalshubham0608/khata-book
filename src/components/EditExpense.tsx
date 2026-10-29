@@ -49,8 +49,8 @@ const EditExpense = (props: EditExpenseProps) => {
             <div className="edit-expense-container">
                 <div className="edit-expense-header">
                     <h2>{t("editExpense.header")}</h2>
-                    <button onClick={props.onCancel}>
-                        <FiX fontSize={30}></FiX>
+                    <button type="button" onClick={props.onCancel} aria-label="Close">
+                        <FiX size={20} />
                     </button>
                 </div>
                 <div className='edit-expense-section'>

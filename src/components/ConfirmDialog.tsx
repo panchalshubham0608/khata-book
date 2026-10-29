@@ -7,6 +7,7 @@ interface ConfirmDialogProps {
   message?: string;
   confirmText?: string;
   cancelText?: string;
+  variant?: "danger" | "primary";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -17,15 +18,15 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   message = "This action cannot be undone.",
   confirmText = "Delete",
   cancelText = "Cancel",
+  variant = "danger",
   onConfirm,
-  onCancel
+  onCancel,
 }) => {
   if (!open) return null;
 
   return (
     <div className="cd-overlay">
       <div className="cd-container">
-
         <h2 className="cd-title">{title}</h2>
         <p className="cd-message">{message}</p>
 
@@ -34,11 +35,15 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             {cancelText}
           </button>
 
-          <button className="cd-btn cd-delete" onClick={onConfirm}>
+          <button
+            className={`cd-btn ${
+              variant === "primary" ? "cd-primary" : "cd-delete"
+            }`}
+            onClick={onConfirm}
+          >
             {confirmText}
           </button>
         </div>
-
       </div>
     </div>
   );

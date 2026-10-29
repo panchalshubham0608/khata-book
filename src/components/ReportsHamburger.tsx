@@ -1,53 +1,94 @@
 import React from "react";
-import { FiMenu, FiLogOut } from "react-icons/fi";
+import {
+    FiMenu,
+    FiLogOut,
+    FiArchive,
+    FiMessageSquare,
+    FiUsers,
+    FiTrash2,
+} from "react-icons/fi";
 import "./ReportsHamburger.css";
 import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
 import { useTranslation } from "../i18n/locale";
 
 interface ReportsHamburgerProps {
-    showDeleted: boolean;
-    toggleShowDeleted: () => void;
+    showArchived: boolean;
+    toggleShowArchived: () => void;
+    smsTrackingEnabled: boolean;
+    toggleSmsTracking: () => void;
     showContacts: () => void;
-    showCategories: () => void;
+    openTrash: () => void;
+    showCategories?: () => void;
     handleLogout: () => void;
 }
 
 const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
-    showDeleted,
-    toggleShowDeleted,
+    showArchived,
+    toggleShowArchived,
+    smsTrackingEnabled,
+    toggleSmsTracking,
     showContacts,
-    showCategories,
+    openTrash,
     handleLogout,
 }) => {
     const { t } = useTranslation();
+    const isMobileApp =
+        typeof window !== "undefined" && Boolean(window.Android);
 
     const reportsMenuItems: HamburgerItem[] = [
         {
-            key: "showDeleted",
-            label: t("reports.showDeletedReports"),
-            ticked: showDeleted,
-            onClick: toggleShowDeleted,
+            key: "showArchived",
+            label: t("reports.showArchivedReports"),
+            icon: <FiArchive size={16} />,
+            ticked: showArchived,
+            onClick: toggleShowArchived,
         },
         {
-            key: "categories",
-            label: t("reports.categories"),
-            onClick: showCategories,
+            key: "smsTracking",
+            label: t("reports.trackSmsTransactions"),
+            sublabel: !isMobileApp
+                ? t("reports.smsMobileOnlyNote")
+                : undefined,
+            icon: <FiMessageSquare size={16} />,
+            ticked: isMobileApp ? smsTrackingEnabled : false,
+            disabled: !isMobileApp,
+            onClick: () => {
+                if (isMobileApp) {
+                    toggleSmsTracking();
+                }
+            },
         },
         {
             key: "contacts",
             label: t("reports.contacts"),
+            icon: <FiUsers size={16} />,
+            dividerBefore: true,
             onClick: showContacts,
+        },
+        {
+            key: "trash",
+            label: t("reports.trash"),
+            icon: <FiTrash2 size={16} />,
+            hideChevron: true,
+            onClick: openTrash,
         },
         {
             key: "logout",
             label: t("reports.logout"),
-            icon: <FiLogOut />,
+            icon: <FiLogOut size={16} />,
             destructive: true,
+            dividerBefore: true,
             onClick: handleLogout,
         },
     ];
 
-    return <HamburgerMenu toggleIcon={<FiMenu size={24} />} items={reportsMenuItems} />
+    return (
+        <HamburgerMenu
+            toggleIcon={<FiMenu size={20} />}
+            items={reportsMenuItems}
+            showLanguageSwitcher={true}
+        />
+    );
 };
 
 export default ReportsHamburger;
