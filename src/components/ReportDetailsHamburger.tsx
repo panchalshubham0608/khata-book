@@ -52,6 +52,7 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
       label: t("reportHamburger.deleteReport"),
       icon: <FiTrash2 size={16} />,
       destructive: true,
+      dividerBefore: true,
       onClick: () => setShowDeleteReportDialog(true),
     },
   ];
@@ -63,7 +64,11 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
 
   return (
     <div>
-      <HamburgerMenu toggleIcon={<FiMoreVertical size={20} />} items={reportMenuItems} />
+      <HamburgerMenu
+        toggleIcon={<FiMoreVertical size={20} />}
+        items={reportMenuItems}
+        showLanguageSwitcher={true}
+      />
 
       <ConfirmDialog
         open={showDeleteReportDialog}

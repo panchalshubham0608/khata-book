@@ -485,11 +485,11 @@
     color: #dc2626;
 }
 
-/* Floating Add Button */
+/* Floating Add Button aligned with 500px content container */
 .add-report-btn {
     position: fixed;
-    bottom: 22px;
-    right: 22px;
+    bottom: 24px;
+    right: max(16px, calc(50% - 250px));
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: #fff;
     border: none;

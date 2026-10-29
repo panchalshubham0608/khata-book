@@ -5,7 +5,6 @@ import ReportDetailsPage from './components/ReportDetailsPage';
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { LocaleProvider } from "./i18n/locale";
-import SettingsButton from "./components/SettingsButton";
 import './App.css';
 
 function App() {
@@ -16,7 +15,6 @@ function App() {
     <LocaleProvider>
       <Router basename={isAndroid ? "" : "/khata-book"}>
         <ScrollToTop />
-        <SettingsButton />
         <Routes>
           <Route path='/' element={<HomePage />} />
           <Route path='/reports' element={

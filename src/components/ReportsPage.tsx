@@ -20,7 +20,7 @@ import Categories from "./Categories";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
-import { isShared, calculateAmountSpent, calculateEffectiveBudget, calculateTopupAmount } from "../utils/reportUtils";
+import { isShared, calculateAmountSpent, calculateEffectiveBudget } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 import Contacts from "./Contacts";
 import SmsTransactionPopup from "./SmsTransactionPopup";
@@ -91,7 +91,7 @@ const ReportsPage = () => {
     }, [showAlert, showDeleted, t]);
 
     const runSmsScan = useCallback(async (email: string) => {
-        if (!isSmsTrackingEnabled(email)) return;
+        if (!window.Android || !isSmsTrackingEnabled(email)) return;
         const detected = await scanUnprocessedSmsTransactions(email);
         if (detected.length > 0) {
             setPendingSmsQueue(detected);

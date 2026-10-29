@@ -1,5 +1,11 @@
 import React from "react";
-import { FiMenu, FiLogOut } from "react-icons/fi";
+import {
+    FiMenu,
+    FiLogOut,
+    FiEye,
+    FiMessageSquare,
+    FiUsers,
+} from "react-icons/fi";
 import "./ReportsHamburger.css";
 import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
 import { useTranslation } from "../i18n/locale";
@@ -10,7 +16,7 @@ interface ReportsHamburgerProps {
     smsTrackingEnabled: boolean;
     toggleSmsTracking: () => void;
     showContacts: () => void;
-    showCategories: () => void;
+    showCategories?: () => void;
     handleLogout: () => void;
 }
 
@@ -20,44 +26,59 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     smsTrackingEnabled,
     toggleSmsTracking,
     showContacts,
-    showCategories,
     handleLogout,
 }) => {
     const { t } = useTranslation();
+    const isMobileApp =
+        typeof window !== "undefined" && Boolean(window.Android);
 
     const reportsMenuItems: HamburgerItem[] = [
         {
             key: "showDeleted",
             label: t("reports.showDeletedReports"),
+            icon: <FiEye size={16} />,
             ticked: showDeleted,
             onClick: toggleShowDeleted,
         },
         {
             key: "smsTracking",
             label: t("reports.trackSmsTransactions"),
-            ticked: smsTrackingEnabled,
-            onClick: toggleSmsTracking,
-        },
-        {
-            key: "categories",
-            label: t("reports.categories"),
-            onClick: showCategories,
+            sublabel: !isMobileApp
+                ? t("reports.smsMobileOnlyNote")
+                : undefined,
+            icon: <FiMessageSquare size={16} />,
+            ticked: isMobileApp ? smsTrackingEnabled : false,
+            disabled: !isMobileApp,
+            onClick: () => {
+                if (isMobileApp) {
+                    toggleSmsTracking();
+                }
+            },
         },
         {
             key: "contacts",
             label: t("reports.contacts"),
+            icon: <FiUsers size={16} />,
+            dividerBefore: true,
             onClick: showContacts,
         },
         {
             key: "logout",
             label: t("reports.logout"),
-            icon: <FiLogOut />,
+            icon: <FiLogOut size={16} />,
             destructive: true,
+            dividerBefore: true,
             onClick: handleLogout,
         },
     ];
 
-    return <HamburgerMenu toggleIcon={<FiMenu size={24} />} items={reportsMenuItems} />
+    return (
+        <HamburgerMenu
+            toggleIcon={<FiMenu size={20} />}
+            items={reportsMenuItems}
+            showLanguageSwitcher={true}
+        />
+    );
 };
 
 export default ReportsHamburger;
