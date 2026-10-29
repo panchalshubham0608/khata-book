@@ -2,6 +2,7 @@ import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
 import HomePage from './components/Homepage';
 import ReportsPage from './components/ReportsPage';
 import ReportDetailsPage from './components/ReportDetailsPage';
+import TrashPage from './components/TrashPage';
 import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { LocaleProvider } from "./i18n/locale";
@@ -20,6 +21,11 @@ function App() {
           <Route path='/reports' element={
             <ProtectedRoute>
               <ReportsPage />
+            </ProtectedRoute>
+          } />
+          <Route path='/trash' element={
+            <ProtectedRoute>
+              <TrashPage />
             </ProtectedRoute>
           } />
           <Route path='/reports/:reportId' element={

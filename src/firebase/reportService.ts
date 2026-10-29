@@ -3,13 +3,15 @@ import {
   doc,
   addDoc,
   updateDoc,
+  deleteDoc,
   getDoc,
   getDocs,
   query,
   where,
   arrayRemove,
   arrayUnion,
-  writeBatch
+  writeBatch,
+  deleteField,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import type { Expense, Report } from "./types";
@@ -53,6 +55,43 @@ export async function deleteReport(reportId: string) {
     deleted: true,
     deletedAt: new Date().toISOString(),
   });
+}
+
+export async function restoreReport(reportId: string) {
+  const reportRef = doc(db, "reports", reportId);
+  await updateDoc(reportRef, {
+    deleted: false,
+    deletedAt: deleteField(),
+  });
+}
+
+export async function permanentlyDeleteReport(reportId: string) {
+  const expensesRef = collection(db, "reports", reportId, "expenses");
+  const expensesSnap = await getDocs(expensesRef);
+
+  const docs = expensesSnap.docs;
+  const chunkSize = 400;
+  for (let i = 0; i < docs.length; i += chunkSize) {
+    const batch = writeBatch(db);
+    for (const expenseDoc of docs.slice(i, i + chunkSize)) {
+      batch.delete(expenseDoc.ref);
+    }
+    await batch.commit();
+  }
+
+  await deleteDoc(doc(db, "reports", reportId));
+}
+
+export async function emptyTrash(email: string, deletedReports: Report[]) {
+  await Promise.all(
+    deletedReports.map(async (report) => {
+      if (report.owner === email) {
+        await permanentlyDeleteReport(report.id);
+      } else {
+        await unshareReport(report.id, email);
+      }
+    })
+  );
 }
 
 export async function shareReport(reportId: string, email: string) {
@@ -176,7 +215,6 @@ async function attachExpenses(report: Report): Promise<Report> {
 }
 
 interface GetReportsOptions {
-  showDeleted?: boolean;
   showArchived?: boolean;
   archivedReports?: string[];
 }
@@ -216,14 +254,6 @@ export async function getReports(email: string, options: GetReportsOptions): Pro
     baseReports = [...baseReports, ...archivedReports];
   }
 
-  if (options.showDeleted) {
-    const deletedReports = reports.filter(
-      (r) =>
-        r.deleted && (!isReportArchived(r) || Boolean(options.showArchived))
-    );
-    baseReports = [...baseReports, ...deletedReports];
-  }
-
   // Dedupe
   const uniqueReports = Object.values(
     baseReports.reduce((acc, r) => {
@@ -233,6 +263,39 @@ export async function getReports(email: string, options: GetReportsOptions): Pro
   );
 
   // Attach expenses using shared helper
+  return await Promise.all(uniqueReports.map((r) => attachExpenses(r)));
+}
+
+export async function getDeletedReports(email: string): Promise<Report[]> {
+  const reportsRef = collection(db, "reports");
+
+  const ownerQ = query(reportsRef, where("owner", "==", email));
+  const sharedQ = query(reportsRef, where("sharedWith", "array-contains", email));
+
+  const [ownerSnap, sharedSnap] = await Promise.all([
+    getDocs(ownerQ),
+    getDocs(sharedQ),
+  ]);
+
+  const deletedReports = [...ownerSnap.docs, ...sharedSnap.docs]
+    .map((d) => ({
+      ...(d.data() as Report),
+      id: d.id,
+    }))
+    .filter((r) => Boolean(r.deleted))
+    .sort((r1, r2) => {
+      const t1 = r1.deletedAt ? Date.parse(r1.deletedAt) : Date.parse(r1.createdAt);
+      const t2 = r2.deletedAt ? Date.parse(r2.deletedAt) : Date.parse(r2.createdAt);
+      return t2 - t1;
+    });
+
+  const uniqueReports = Object.values(
+    deletedReports.reduce((acc, r) => {
+      acc[r.id] = r;
+      return acc;
+    }, {} as Record<string, Report>)
+  );
+
   return await Promise.all(uniqueReports.map((r) => attachExpenses(r)));
 }
 

@@ -2,35 +2,33 @@ import React from "react";
 import {
     FiMenu,
     FiLogOut,
-    FiEye,
     FiArchive,
     FiMessageSquare,
     FiUsers,
+    FiTrash2,
 } from "react-icons/fi";
 import "./ReportsHamburger.css";
 import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
 import { useTranslation } from "../i18n/locale";
 
 interface ReportsHamburgerProps {
-    showDeleted: boolean;
-    toggleShowDeleted: () => void;
     showArchived: boolean;
     toggleShowArchived: () => void;
     smsTrackingEnabled: boolean;
     toggleSmsTracking: () => void;
     showContacts: () => void;
+    openTrash: () => void;
     showCategories?: () => void;
     handleLogout: () => void;
 }
 
 const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
-    showDeleted,
-    toggleShowDeleted,
     showArchived,
     toggleShowArchived,
     smsTrackingEnabled,
     toggleSmsTracking,
     showContacts,
+    openTrash,
     handleLogout,
 }) => {
     const { t } = useTranslation();
@@ -38,13 +36,6 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
         typeof window !== "undefined" && Boolean(window.Android);
 
     const reportsMenuItems: HamburgerItem[] = [
-        {
-            key: "showDeleted",
-            label: t("reports.showDeletedReports"),
-            icon: <FiEye size={16} />,
-            ticked: showDeleted,
-            onClick: toggleShowDeleted,
-        },
         {
             key: "showArchived",
             label: t("reports.showArchivedReports"),
@@ -73,6 +64,13 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
             icon: <FiUsers size={16} />,
             dividerBefore: true,
             onClick: showContacts,
+        },
+        {
+            key: "trash",
+            label: t("reports.trash"),
+            icon: <FiTrash2 size={16} />,
+            hideChevron: true,
+            onClick: openTrash,
         },
         {
             key: "logout",

@@ -7,6 +7,7 @@ import {
   FiPlusCircle,
   FiUploadCloud,
   FiArchive,
+  FiRotateCcw,
 } from "react-icons/fi";
 import ConfirmDialog from "./ConfirmDialog";
 import ManageAccessPopup from "./ManageAccessPopup";
@@ -18,10 +19,12 @@ interface ReportHamburgerMenuProps {
   sharedWith: string[];
   canManage?: boolean;
   canArchive?: boolean;
+  canRestore?: boolean;
   isArchived?: boolean;
   onAddEmail?: (email: string) => void;
   onRemoveEmail?: (email: string) => void;
   onDeleteReport?: () => void;
+  onRestoreReport?: () => void;
   onArchiveReport?: () => void;
   onUnarchiveReport?: () => void;
   onTopup?: (amount: number) => void;
@@ -32,10 +35,12 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   sharedWith,
   canManage = true,
   canArchive = false,
+  canRestore = false,
   isArchived = false,
   onAddEmail,
   onRemoveEmail,
   onDeleteReport,
+  onRestoreReport,
   onArchiveReport,
   onUnarchiveReport,
   onTopup,
@@ -43,6 +48,7 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
 }) => {
   const { t } = useTranslation();
   const [showDeleteReportDialog, setShowDeleteReportDialog] = useState<boolean>(false);
+  const [showRestoreReportDialog, setShowRestoreReportDialog] = useState<boolean>(false);
   const [showArchiveReportDialog, setShowArchiveReportDialog] = useState<boolean>(false);
   const [showUnarchiveReportDialog, setShowUnarchiveReportDialog] = useState<boolean>(false);
   const [showBackupDialog, setShowBackupDialog] = useState<boolean>(false);
@@ -89,6 +95,17 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
                 setShowArchiveReportDialog(true);
               }
             },
+          },
+        ]
+      : []),
+    ...(canRestore
+      ? [
+          {
+            key: "restoreReport",
+            label: t("trash.restoreButton"),
+            icon: <FiRotateCcw size={16} />,
+            hideChevron: true,
+            onClick: () => setShowRestoreReportDialog(true),
           },
         ]
       : []),
@@ -162,6 +179,20 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
               onUnarchiveReport?.();
             }}
             onCancel={() => setShowUnarchiveReportDialog(false)}
+          />
+
+          <ConfirmDialog
+            open={showRestoreReportDialog}
+            variant="primary"
+            title={t("trash.restoreConfirmTitle")}
+            message={t("trash.restoreConfirmMessage")}
+            confirmText={t("trash.restoreConfirmConfirmText")}
+            cancelText={t("trash.restoreConfirmCancelText")}
+            onConfirm={() => {
+              setShowRestoreReportDialog(false);
+              onRestoreReport?.();
+            }}
+            onCancel={() => setShowRestoreReportDialog(false)}
           />
 
           <ConfirmDialog

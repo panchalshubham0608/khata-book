@@ -43,10 +43,6 @@ const ReportsPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const [showDeleted, setShowDeleted] = useState<boolean>(() => {
-        const stored = localStorage.getItem("showDeleted");
-        return stored === "true";
-    });
     const [showArchived, setShowArchived] = useState<boolean>(() => {
         const stored = localStorage.getItem("showArchived");
         return stored === "true";
@@ -98,7 +94,6 @@ const ReportsPage = () => {
             }));
             setArchivedReports(profile.archivedReports);
             const userReports = await getReports(email, {
-                showDeleted,
                 showArchived,
                 archivedReports: profile.archivedReports,
             });
@@ -109,7 +104,7 @@ const ReportsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [showAlert, showDeleted, showArchived, t]);
+    }, [showAlert, showArchived, t]);
 
     const runSmsScan = useCallback(async (email: string) => {
         if (!window.Android || !isSmsTrackingEnabled(email)) return;
@@ -181,14 +176,6 @@ const ReportsPage = () => {
             window.removeEventListener("smsTrackingSettingChanged", handleSettingChanged);
         };
     }, [user, runSmsScan, showAlert, t]);
-
-    const toggleShowDeleted = () => {
-        setShowDeleted((prev) => {
-            const next = !prev;
-            localStorage.setItem("showDeleted", next.toString());
-            return next;
-        });
-    };
 
     const toggleShowArchived = () => {
         setShowArchived((prev) => {
@@ -323,13 +310,12 @@ const ReportsPage = () => {
                 </div>
 
                 <ReportsHamburger
-                    showDeleted={showDeleted}
-                    toggleShowDeleted={toggleShowDeleted}
                     showArchived={showArchived}
                     toggleShowArchived={toggleShowArchived}
                     smsTrackingEnabled={smsTrackingEnabled}
                     toggleSmsTracking={toggleSmsTracking}
                     showContacts={() => setShowContacts(true)}
+                    openTrash={() => navigate("/trash")}
                     showCategories={() => setShowCategories(true)}
                     handleLogout={handleLogout}
                 />

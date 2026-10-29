@@ -25,6 +25,7 @@ import {
     deleteExpense,
     deleteReport,
     getReport,
+    restoreReport,
     shareReport,
     unarchiveReport,
     unshareReport,
@@ -311,6 +312,26 @@ const ReportDetailsPage = () => {
         }
     };
 
+    const handleRestoreReport = useCallback(async () => {
+        try {
+            if (!reportId) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await restoreReport(reportId);
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+            showAlert(t("trash.restoreSuccess"), "success");
+        } catch (err) {
+            console.error(err);
+            showAlert(t("trash.restoreError"), "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId, showAlert, t]);
+
     const handleArchiveReport = useCallback(async () => {
         try {
             if (!reportId || !user?.email) {
@@ -435,6 +456,9 @@ const ReportDetailsPage = () => {
     const canActOnExpense = Boolean(
         isOwner(report, user?.email) && !report.deleted
     );
+    const canRestoreReport = Boolean(
+        isOwner(report, user?.email) && report.deleted
+    );
     const canArchiveReport = Boolean(!report.deleted);
     const reportArchived = isArchived(report.id, archivedReports);
 
@@ -485,11 +509,13 @@ const ReportDetailsPage = () => {
                             <ReportHamburgerMenu
                                 canManage={canActOnExpense}
                                 canArchive={canArchiveReport}
+                                canRestore={canRestoreReport}
                                 isArchived={reportArchived}
                                 sharedWith={report.sharedWith}
                                 onAddEmail={handleAddEmail}
                                 onRemoveEmail={handleRemoveEmail}
                                 onDeleteReport={handleDeleteReport}
+                                onRestoreReport={handleRestoreReport}
                                 onArchiveReport={handleArchiveReport}
                                 onUnarchiveReport={handleUnarchiveReport}
                                 onTopup={handleTopup}
