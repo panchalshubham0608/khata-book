@@ -1,51 +1,292 @@
 .home-container {
+  position: relative;
+  min-height: 100vh;
+  padding: 20px 16px 32px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 50%, #ffffff 100%);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
-  padding: 20px;
-  background: #f7f9fc;
-  font-family: "Inter", sans-serif;
+  justify-content: center;
+  overflow: hidden;
+  font-family: "Plus Jakarta Sans", "Inter", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.home-content {
+/* Subtle Decorative Ambient Orbs */
+.home-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(55px);
+  z-index: 0;
+}
+
+.home-bg-orb.orb-primary {
+  width: 280px;
+  height: 280px;
+  top: -80px;
+  right: -70px;
+  background: rgba(37, 99, 235, 0.14);
+}
+
+.home-bg-orb.orb-secondary {
+  width: 240px;
+  height: 240px;
+  bottom: -70px;
+  left: -60px;
+  background: rgba(16, 185, 129, 0.11);
+}
+
+/* Topbar with Language Pill */
+.home-topbar {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+}
+
+.home-lang-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 5px 4px 9px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.home-lang-icon {
+  color: #64748b;
+  margin-right: 3px;
+}
+
+.home-lang-btn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.home-lang-btn.is-active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+}
+
+/* Main Login Card */
+.home-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 26px;
+  padding: 22px;
+  box-shadow:
+    0 20px 44px -12px rgba(15, 23, 42, 0.1),
+    0 4px 14px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Gradient Hero Banner inside Card */
+.home-hero-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%);
+  border-radius: 20px;
+  padding: 26px 20px 22px;
+  color: #ffffff;
   text-align: center;
-  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 28px -8px rgba(37, 99, 235, 0.38);
+}
+
+.home-hero-banner::after {
+  content: "";
+  position: absolute;
+  top: -45px;
+  right: -45px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.home-logo-ring {
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
 }
 
 .home-logo {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 20px;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  border-radius: 14px;
 }
 
-.home-title {
-  font-size: 1.8rem;
+.home-badge {
+  display: inline-block;
+  font-size: 11px;
   font-weight: 700;
-  color: #0d1b2a;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #bfdbfe;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 4px 11px;
+  border-radius: 999px;
   margin-bottom: 10px;
 }
 
-.home-description {
-  font-size: 1rem;
-  color: #334155;
-  margin-bottom: 30px;
-  line-height: 1.5;
+.home-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin: 0 0 8px;
+  line-height: 1.2;
 }
 
+.home-description {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+  line-height: 1.55;
+  max-width: 310px;
+}
+
+/* Feature Highlights */
+.home-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 2px;
+}
+
+.home-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+}
+
+.home-feature-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.home-feature-icon.track {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.home-feature-icon.share {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.home-feature-icon.backup {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.home-feature-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+/* Primary CTA Button */
 .home-button {
   width: 100%;
-  padding: 12px 0;
-  background: #2563eb;
-  color: white;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
-  transition: 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 10px 24px -4px rgba(37, 99, 235, 0.4);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
 }
 
-.home-button:hover {
-  background: #1d4ed8;
+.home-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -4px rgba(37, 99, 235, 0.5);
 }
+
+.home-button:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.home-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.home-google-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2563eb;
+  font-size: 13.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.home-button-arrow {
+  margin-left: auto;
+  opacity: 0.9;
+  transition: transform 0.16s ease;
+}
+
+.home-button:hover:not(:disabled) .home-button-arrow {
+  transform: translateX(3px);
+}
+
