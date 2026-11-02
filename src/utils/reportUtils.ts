@@ -16,4 +16,33 @@ export const getRemainingDays = (deletedAt: string | number): number => {
     const expiryMs = 60 * 24 * 60 * 60 * 1000; // 60 days in ms
     const remainingMs = expiryMs - (now - deletedDate);
     return remainingMs > 0 ? Math.ceil(remainingMs / (1000 * 60 * 60 * 24)) : 0;
-}
+};
+
+export const toLocalDateInputValue = (value?: string | number | Date): string => {
+    const d = value !== undefined ? new Date(value) : new Date();
+    const validDate = Number.isNaN(d.getTime()) ? new Date() : d;
+    const year = validDate.getFullYear();
+    const month = String(validDate.getMonth() + 1).padStart(2, "0");
+    const day = String(validDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+export const localDateInputToIso = (dateInput: string, referenceIso?: string): string => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateInput.trim());
+    if (!match) {
+        return referenceIso || new Date().toISOString();
+    }
+    const [, yStr, mStr, dStr] = match;
+    const ref = referenceIso ? new Date(referenceIso) : new Date();
+    const base = Number.isNaN(ref.getTime()) ? new Date() : ref;
+    const combined = new Date(
+        Number(yStr),
+        Number(mStr) - 1,
+        Number(dStr),
+        base.getHours(),
+        base.getMinutes(),
+        base.getSeconds(),
+        base.getMilliseconds()
+    );
+    return Number.isNaN(combined.getTime()) ? new Date().toISOString() : combined.toISOString();
+};

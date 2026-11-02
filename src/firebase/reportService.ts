@@ -123,17 +123,18 @@ export interface CreateExpenseOptions {
   authorEmail: string;
   authorDisplayName: string;
   categories?: string[];
+  date?: string;
 }
 
 export async function createExpense(options: CreateExpenseOptions) {
-  const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName, categories } = options;
+  const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName, categories, date } = options;
 
   const expensesRef = collection(db, "reports", reportId, "expenses");
 
   const expenseData: Omit<Expense, "id"> = {
     title: expenseTitle,
     amount: expenseAmount,
-    date: new Date().toISOString(),
+    date: date || new Date().toISOString(),
     createdAt: new Date().toISOString(),
     authorEmail,
     authorDisplayName,
@@ -155,14 +156,14 @@ export async function createExpensesBatch(items: CreateExpenseOptions[]): Promis
   const createdIds: string[] = [];
 
   for (const options of items) {
-    const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName, categories } = options;
+    const { reportId, expenseTitle, expenseAmount, authorEmail, authorDisplayName, categories, date } = options;
     const expensesRef = collection(db, "reports", reportId, "expenses");
     const newExpenseDocRef = doc(expensesRef);
 
     const expenseData: Omit<Expense, "id"> = {
       title: expenseTitle,
       amount: expenseAmount,
-      date: new Date().toISOString(),
+      date: date || new Date().toISOString(),
       createdAt: new Date().toISOString(),
       authorEmail,
       authorDisplayName,
@@ -185,11 +186,17 @@ interface UpdateExpenseOptions {
   expenseId: string;
   title: string;
   amount: number;
+  date?: string;
 }
 export async function updateExense(options: UpdateExpenseOptions) {
-  const { reportId, expenseId, title, amount } = options;
+  const { reportId, expenseId, title, amount, date } = options;
   const expenseRef = doc(db, "reports", reportId, "expenses", expenseId);
-  await updateDoc(expenseRef, { title, amount, updatedAt: new Date().toISOString() });
+  await updateDoc(expenseRef, {
+    title,
+    amount,
+    ...(date ? { date } : {}),
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function deleteExpense(reportId: string, expenseId: string) {
@@ -206,7 +213,11 @@ async function attachExpenses(report: Report): Promise<Report> {
       ...(d.data() as Expense),
       id: d.id,
     }))
-    .sort((a, b) => b.date.localeCompare(a.date)); // newest first
+    .sort((a, b) => {
+      const cmp = b.date.localeCompare(a.date);
+      if (cmp !== 0) return cmp;
+      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+    }); // newest first
 
   return {
     ...report,

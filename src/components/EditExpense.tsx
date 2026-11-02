@@ -7,13 +7,15 @@ import ConfirmDialog from './ConfirmDialog';
 import { useAlert } from '../hooks/useAlert';
 import Alert from './Alert';
 import { useTranslation } from '../i18n/locale';
+import { localDateInputToIso, toLocalDateInputValue } from '../utils/reportUtils';
 
 interface EditExpenseProps {
     expenseTitle: string;
     expenseAmount: string;
+    expenseDate: string;
     onCancel: () => void;
     onDelete: () => void;
-    onEdit: (title: string, amount: number) => void;
+    onEdit: (title: string, amount: number, date: string) => void;
 }
 
 const EditExpense = (props: EditExpenseProps) => {
@@ -21,6 +23,7 @@ const EditExpense = (props: EditExpenseProps) => {
     const { t } = useTranslation();
     const [title, setTitle] = useState<string>(props.expenseTitle);
     const [amount, setAmount] = useState<string>(Math.abs(Number(props.expenseAmount)).toString());
+    const [date, setDate] = useState<string>(() => toLocalDateInputValue(props.expenseDate));
     const [showDeleteExpenseDialog, setShowDeleteExpenseDialog] = useState<boolean>(false);
 
     const handleEdit = () => {
@@ -35,12 +38,21 @@ const EditExpense = (props: EditExpenseProps) => {
             return;
         }
 
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+            showAlert(t("editExpense.invalidDate"), "error");
+            return;
+        }
+
         let updatedAmount = Math.abs(number);
         if (Number(props.expenseAmount) < 0) {
             updatedAmount = -1 * Math.abs(number);
         }
 
-        props.onEdit(title.trim(), updatedAmount);
+        props.onEdit(
+            title.trim(),
+            updatedAmount,
+            localDateInputToIso(date, props.expenseDate)
+        );
     }
 
     return (
@@ -65,6 +77,13 @@ const EditExpense = (props: EditExpenseProps) => {
                         value={amount}
                         className="input-field"
                         onChange={(e) => setAmount(e.target.value)}
+                    />
+                    <input
+                        type="date"
+                        value={date}
+                        aria-label={t("editExpense.dateLabel")}
+                        className="input-field"
+                        onChange={(e) => setDate(e.target.value)}
                     />
                 </div>
                 <div className="edit-expense-footer">
