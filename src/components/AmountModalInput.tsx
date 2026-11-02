@@ -7,13 +7,15 @@ import { parseHindiExpense } from "../utils/voiceInputUtils";
 import { useTranslation } from "../i18n/locale";
 import { getCategories } from "../firebase/categoryService";
 import type { Category } from "../firebase/types";
+import { localDateInputToIso, toLocalDateInputValue } from "../utils/reportUtils";
 
 interface AmountModalInputProps {
     header: string;
     titlePlaceholder?: string;
     amountPlaceholder: string;
     showCategories?: boolean;
-    onAccept: (title: string, amount: number, categories?: string[]) => void;
+    showDate?: boolean;
+    onAccept: (title: string, amount: number, categories?: string[], date?: string) => void;
     onReject: () => void;
 }
 
@@ -22,12 +24,14 @@ const AmountModalInput = (props: AmountModalInputProps) => {
     const { t } = useTranslation();
     const [title, setTitle] = useState<string>("");
     const [amount, setAmount] = useState<string>("");
+    const [date, setDate] = useState<string>(() => toLocalDateInputValue());
     const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
     const clearInputs = () => {
         setTitle("");
         setAmount("");
+        setDate(toLocalDateInputValue());
     }
 
     const handleVoiceInput = (value: string) => {
@@ -68,9 +72,18 @@ const AmountModalInput = (props: AmountModalInputProps) => {
             showAlert(t("amountModal.invalidAmount", { field: props.amountPlaceholder }), "error");
             return;
         }
-        props.onAccept(title, number, selectedCategories.length ? selectedCategories : undefined);
+        if (props.showDate && !/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+            showAlert(t("amountModal.invalidDate"), "error");
+            return;
+        }
+        props.onAccept(
+            title,
+            number,
+            selectedCategories.length ? selectedCategories : undefined,
+            props.showDate ? localDateInputToIso(date) : undefined
+        );
         clearInputs();
-    }, [title, amount, selectedCategories, props.amountPlaceholder, props.titlePlaceholder, props.onAccept, props.onReject, showAlert, t]);
+    }, [title, amount, date, selectedCategories, props.amountPlaceholder, props.titlePlaceholder, props.showDate, props.onAccept, props.onReject, showAlert, t]);
 
     const handleReject = useCallback(() => {
         clearInputs();
@@ -95,6 +108,15 @@ const AmountModalInput = (props: AmountModalInputProps) => {
                         className="input-field"
                         onChange={(e) => setAmount(e.target.value)}
                     />
+                    {props.showDate && (
+                        <input
+                            type="date"
+                            value={date}
+                            aria-label={t("amountModal.dateLabel")}
+                            className="input-field"
+                            onChange={(e) => setDate(e.target.value)}
+                        />
+                    )}
                     {props.showCategories && availableCategories.length > 0 && (
                         <div style={{ marginTop: 12 }}>
                             <div style={{ marginBottom: 8, fontSize: 14, color: '#333' }}>{t("amountModal.selectCategories")}</div>

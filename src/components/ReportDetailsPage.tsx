@@ -122,7 +122,8 @@ const ReportDetailsPage = () => {
             title: string,
             amount: number,
             label: string,
-            categories?: string[]
+            categories?: string[],
+            date?: string
         ) => {
             if (!user || !user.email || !user.displayName) {
                 showAlert(t("reportDetails.ownerMissing"), "error");
@@ -142,6 +143,7 @@ const ReportDetailsPage = () => {
                     authorEmail: user.email,
                     authorDisplayName: user.displayName,
                     categories,
+                    date,
                 });
 
                 const updated = await getReport(reportId);
@@ -160,22 +162,30 @@ const ReportDetailsPage = () => {
     );
 
     const handleAddExpense = useCallback(
-        async (title: string, amount: number, categories?: string[]) =>
+        async (
+            title: string,
+            amount: number,
+            categories?: string[],
+            date?: string
+        ) =>
             await createExpenseHelper(
                 title,
                 -1 * Math.abs(amount),
                 t("reportDetails.expenseLabel"),
-                categories
+                categories,
+                date
             ),
         [createExpenseHelper, t]
     );
 
     const handleTopup = useCallback(
-        async (amount: number) =>
+        async (amount: number, date?: string) =>
             await createExpenseHelper(
                 t("reportDetails.action.topup"),
                 Math.abs(amount),
-                t("reportDetails.action.topup")
+                t("reportDetails.action.topup"),
+                undefined,
+                date
             ),
         [createExpenseHelper, t]
     );
@@ -233,7 +243,7 @@ const ReportDetailsPage = () => {
     );
 
     const handleEditExpense = useCallback(
-        async (title: string, amount: number) => {
+        async (title: string, amount: number, date: string) => {
             try {
                 if (!reportId) {
                     showAlert(t("reportDetails.reportIdMissing"), "error");
@@ -250,6 +260,7 @@ const ReportDetailsPage = () => {
                     expenseId: selectedExpenseId,
                     title,
                     amount,
+                    date,
                 });
 
                 const updated = await getReport(reportId);
@@ -744,6 +755,7 @@ const ReportDetailsPage = () => {
                         "reportDetails.expenseAmountPlaceholder"
                     )}
                     showCategories={false}
+                    showDate={true}
                     onReject={() => setOpenExpenseModal(false)}
                     onAccept={handleAddExpense}
                 />
@@ -753,6 +765,7 @@ const ReportDetailsPage = () => {
                 <EditExpense
                     expenseTitle={selectedExpense.title}
                     expenseAmount={selectedExpense.amount.toString()}
+                    expenseDate={selectedExpense.date}
                     onCancel={() => setSelectedExpenseId(null)}
                     onDelete={handleDeleteExpense}
                     onEdit={handleEditExpense}

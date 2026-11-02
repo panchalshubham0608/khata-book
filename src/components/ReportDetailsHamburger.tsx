@@ -27,7 +27,7 @@ interface ReportHamburgerMenuProps {
   onRestoreReport?: () => void;
   onArchiveReport?: () => void;
   onUnarchiveReport?: () => void;
-  onTopup?: (amount: number) => void;
+  onTopup?: (amount: number, date?: string) => void;
   onBackup?: () => void;
 }
 
@@ -123,9 +123,14 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
       : []),
   ];
 
-  const handleTopup = async (_: string, amount: number) => {
+  const handleTopup = async (
+    _: string,
+    amount: number,
+    _categories?: string[],
+    date?: string
+  ) => {
     setShowTopupInput(false);
-    if (onTopup) await onTopup(amount);
+    if (onTopup) await onTopup(amount, date);
   };
 
   return (
@@ -221,6 +226,7 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
             <AmountModalInput
               header={t("reportHamburger.topupHeader")}
               amountPlaceholder={t("reportHamburger.topupAmountPlaceholder")}
+              showDate={true}
               onAccept={handleTopup}
               onReject={() => setShowTopupInput(false)}
             />
