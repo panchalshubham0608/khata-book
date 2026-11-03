@@ -27,6 +27,7 @@ export interface UserProfile {
     id: string;                 // Document ID (user email)
     owner: string;              // Email of the user who owns this profile
     archivedReports: string[];  // List of report IDs archived by this user
+    geminiApiKey?: string;      // Optional Gemini API key synced for this user
     updatedAt: string;          // ISO timestamp when profile was last updated
 }
 

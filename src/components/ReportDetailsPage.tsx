@@ -12,6 +12,7 @@ import {
     FiTrendingUp,
     FiLayers,
     FiArchive,
+    FiMic,
 } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
@@ -22,6 +23,7 @@ import type { Report } from "../firebase/types";
 import {
     archiveReport,
     createExpense,
+    createExpensesBatch,
     deleteExpense,
     deleteReport,
     getReport,
@@ -48,6 +50,12 @@ import { backupReportToGoogleSheets } from "../utils/googleBackup";
 import { type User } from "firebase/auth";
 import EditExpense from "./EditExpense";
 import ExpenseRow from "./ExpenseRow";
+import GeminiKeyModal from "./GeminiKeyModal";
+import GeminiVoiceRecorderModal from "./GeminiVoiceRecorderModal";
+import GeminiExpenseCarousel, {
+    type ApprovedGeminiExpense,
+} from "./GeminiExpenseCarousel";
+import type { GeminiAudioAnalysisResult } from "../services/geminiAudioService";
 import { useTranslation } from "../i18n/locale";
 
 const ReportDetailsPage = () => {
@@ -59,6 +67,13 @@ const ReportDetailsPage = () => {
     const [user, setUser] = useState<User | null>(null);
     const [report, setReport] = useState<Report | null>(null);
     const [archivedReports, setArchivedReports] = useState<string[]>([]);
+    const [geminiApiKey, setGeminiApiKey] = useState<string>("");
+    const [showGeminiKeyModal, setShowGeminiKeyModal] = useState<boolean>(false);
+    const [pendingVoiceAfterKey, setPendingVoiceAfterKey] =
+        useState<boolean>(false);
+    const [showVoiceRecorder, setShowVoiceRecorder] = useState<boolean>(false);
+    const [geminiResult, setGeminiResult] =
+        useState<GeminiAudioAnalysisResult | null>(null);
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
@@ -72,6 +87,7 @@ const ReportDetailsPage = () => {
             if (!user?.email) {
                 setReport(null);
                 setArchivedReports([]);
+                setGeminiApiKey("");
                 setLoading(false);
                 return;
             }
@@ -84,11 +100,13 @@ const ReportDetailsPage = () => {
                         id: user.email!,
                         owner: user.email!,
                         archivedReports: [] as string[],
+                        geminiApiKey: undefined,
                         updatedAt: "",
                     })),
                 ]);
 
                 setArchivedReports(profile.archivedReports);
+                setGeminiApiKey(profile.geminiApiKey || "");
 
                 if (!fetched) {
                     showAlert(t("reportDetails.reportNotFound"), "error");
@@ -401,6 +419,56 @@ const ReportDetailsPage = () => {
         }
     }, [report, showAlert, t]);
 
+    const handleVoiceButtonClick = useCallback(() => {
+        if (!geminiApiKey.trim()) {
+            setPendingVoiceAfterKey(true);
+            setShowGeminiKeyModal(true);
+            return;
+        }
+        setShowVoiceRecorder(true);
+    }, [geminiApiKey]);
+
+    const handleCommitGeminiBatch = useCallback(
+        async (approved: ApprovedGeminiExpense[]) => {
+            if (!reportId || !user?.email) {
+                setGeminiResult(null);
+                return;
+            }
+            if (approved.length === 0) {
+                setGeminiResult(null);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                await createExpensesBatch(
+                    approved.map((item) => ({
+                        reportId,
+                        expenseTitle: item.title,
+                        expenseAmount: item.signedAmount,
+                        authorEmail: user.email!,
+                        authorDisplayName: user.displayName || user.email!,
+                        date: item.dateIso,
+                    }))
+                );
+
+                const updated = await getReport(reportId);
+                if (updated) setReport(updated);
+
+                setGeminiResult(null);
+                showAlert(
+                    t("gemini.expensesAddedSuccess", { count: approved.length }),
+                    "success"
+                );
+            } catch {
+                showAlert(t("gemini.expensesAddError"), "error");
+            } finally {
+                setLoading(false);
+            }
+        },
+        [reportId, showAlert, t, user]
+    );
+
     useEffect(() => {
         const handler = window.setTimeout(() => {
             setDebouncedSearchTerm(searchTerm.trim().toLowerCase());
@@ -531,6 +599,10 @@ const ReportDetailsPage = () => {
                                 onUnarchiveReport={handleUnarchiveReport}
                                 onTopup={handleTopup}
                                 onBackup={handleBackup}
+                                onOpenGeminiKey={() => {
+                                    setPendingVoiceAfterKey(false);
+                                    setShowGeminiKeyModal(true);
+                                }}
                             />
                         </div>
                     </div>
@@ -707,14 +779,24 @@ const ReportDetailsPage = () => {
                                     {t("reportDetails.noExpensesSubtext")}
                                 </p>
                                 {!report.deleted && (
-                                    <button
-                                        type="button"
-                                        className="no-reports-cta"
-                                        onClick={() => setOpenExpenseModal(true)}
-                                    >
-                                        <FiPlus size={16} />
-                                        {t("reportDetails.addExpenseHeader")}
-                                    </button>
+                                    <div className="no-expenses-cta-row">
+                                        <button
+                                            type="button"
+                                            className="no-reports-cta"
+                                            onClick={() => setOpenExpenseModal(true)}
+                                        >
+                                            <FiPlus size={16} />
+                                            {t("reportDetails.addExpenseHeader")}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="no-reports-cta gemini-ai-cta"
+                                            onClick={handleVoiceButtonClick}
+                                        >
+                                            <FiMic size={16} />
+                                            {t("gemini.aiBatchButton")}
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -738,13 +820,26 @@ const ReportDetailsPage = () => {
             </main>
 
             {!report.deleted && (
-                <button
-                    className="add-expense-btn"
-                    onClick={() => setOpenExpenseModal(true)}
-                    aria-label={t("reportDetails.addExpenseHeader")}
-                >
-                    <FiPlus size={24} />
-                </button>
+                <div className="report-floating-actions">
+                    <button
+                        type="button"
+                        className="gemini-voice-btn"
+                        onClick={handleVoiceButtonClick}
+                        aria-label={t("gemini.voiceButtonAria")}
+                        title={t("gemini.voiceButtonAria")}
+                    >
+                        <FiMic size={21} />
+                        <span className="gemini-voice-btn-badge">AI</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="add-expense-btn"
+                        onClick={() => setOpenExpenseModal(true)}
+                        aria-label={t("reportDetails.addExpenseHeader")}
+                    >
+                        <FiPlus size={24} />
+                    </button>
+                </div>
             )}
 
             {openExpenseModal && (
@@ -769,6 +864,50 @@ const ReportDetailsPage = () => {
                     onCancel={() => setSelectedExpenseId(null)}
                     onDelete={handleDeleteExpense}
                     onEdit={handleEditExpense}
+                />
+            )}
+
+            {showGeminiKeyModal && (
+                <GeminiKeyModal
+                    initialApiKey={geminiApiKey}
+                    onClose={() => {
+                        setShowGeminiKeyModal(false);
+                        setPendingVoiceAfterKey(false);
+                    }}
+                    onSaved={(newKey) => {
+                        setGeminiApiKey(newKey);
+                        if (newKey && pendingVoiceAfterKey) {
+                            setShowGeminiKeyModal(false);
+                            setPendingVoiceAfterKey(false);
+                            setShowVoiceRecorder(true);
+                        }
+                    }}
+                />
+            )}
+
+            {showVoiceRecorder && (
+                <GeminiVoiceRecorderModal
+                    apiKey={geminiApiKey}
+                    onClose={() => setShowVoiceRecorder(false)}
+                    onOpenKeySettings={() => {
+                        setShowVoiceRecorder(false);
+                        setPendingVoiceAfterKey(true);
+                        setShowGeminiKeyModal(true);
+                    }}
+                    onExtracted={(result) => {
+                        setShowVoiceRecorder(false);
+                        setGeminiResult(result);
+                    }}
+                />
+            )}
+
+            {geminiResult && geminiResult.expenses.length > 0 && (
+                <GeminiExpenseCarousel
+                    expenses={geminiResult.expenses}
+                    transcript={geminiResult.transcript}
+                    reportTitle={report.title}
+                    onCommitBatch={handleCommitGeminiBatch}
+                    onCancel={() => setGeminiResult(null)}
                 />
             )}
         </div>

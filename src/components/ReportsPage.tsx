@@ -9,6 +9,7 @@ import {
     FiTrendingDown,
     FiFolder,
     FiArchive,
+    FiMic,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
@@ -25,6 +26,10 @@ import Loader from "./Loader";
 import { isShared, isArchived, calculateAmountSpent, calculateEffectiveBudget } from "../utils/reportUtils";
 import ReportsHamburger from "./ReportsHamburger";
 import Contacts from "./Contacts";
+import GeminiKeyModal from "./GeminiKeyModal";
+import GeminiVoiceRecorderModal from "./GeminiVoiceRecorderModal";
+import GeminiExpenseCarousel, { type ApprovedGeminiExpense } from "./GeminiExpenseCarousel";
+import type { GeminiAudioAnalysisResult } from "../services/geminiAudioService";
 import SmsTransactionPopup from "./SmsTransactionPopup";
 import {
     isSmsTrackingEnabled,
@@ -50,6 +55,11 @@ const ReportsPage = () => {
     const [smsTrackingEnabled, setSmsTrackingEnabledState] = useState<boolean>(false);
     const [pendingSmsQueue, setPendingSmsQueue] = useState<PendingSmsTransaction[]>([]);
     const [showContacts, setShowContacts] = useState(false);
+    const [showGeminiKeyModal, setShowGeminiKeyModal] = useState(false);
+    const [geminiApiKey, setGeminiApiKey] = useState<string>("");
+    const [pendingVoiceAfterKey, setPendingVoiceAfterKey] = useState<boolean>(false);
+    const [showVoiceRecorder, setShowVoiceRecorder] = useState<boolean>(false);
+    const [geminiResult, setGeminiResult] = useState<GeminiAudioAnalysisResult | null>(null);
     const [showCategories, setShowCategories] = useState(false);
     const { alert, showAlert } = useAlert();
     const { t, locale } = useTranslation();
@@ -60,6 +70,11 @@ const ReportsPage = () => {
                 (r) => !r.deleted && !isArchived(r.id, archivedReports)
             ),
         [reports, archivedReports]
+    );
+
+    const singleActiveReport = useMemo(
+        () => (activeReports.length === 1 ? activeReports[0] : null),
+        [activeReports]
     );
 
     const portfolioStats = useMemo(() => {
@@ -90,9 +105,11 @@ const ReportsPage = () => {
                 id: email,
                 owner: email,
                 archivedReports: [] as string[],
+                geminiApiKey: undefined,
                 updatedAt: "",
             }));
             setArchivedReports(profile.archivedReports);
+            setGeminiApiKey(profile.geminiApiKey || "");
             const userReports = await getReports(email, {
                 showArchived,
                 archivedReports: profile.archivedReports,
@@ -125,6 +142,7 @@ const ReportsPage = () => {
             } else {
                 setReports([]);
                 setArchivedReports([]);
+                setGeminiApiKey("");
                 setLoading(false);
             }
         });
@@ -285,6 +303,54 @@ const ReportsPage = () => {
         }
     };
 
+    const handleVoiceButtonClick = useCallback(() => {
+        if (!geminiApiKey.trim()) {
+            setPendingVoiceAfterKey(true);
+            setShowGeminiKeyModal(true);
+            return;
+        }
+        setShowVoiceRecorder(true);
+    }, [geminiApiKey]);
+
+    const handleCommitGeminiBatch = useCallback(
+        async (approved: ApprovedGeminiExpense[]) => {
+            if (!singleActiveReport || !user?.email) {
+                setGeminiResult(null);
+                return;
+            }
+            if (approved.length === 0) {
+                setGeminiResult(null);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                await createExpensesBatch(
+                    approved.map((item) => ({
+                        reportId: singleActiveReport.id,
+                        expenseTitle: item.title,
+                        expenseAmount: item.signedAmount,
+                        authorEmail: user.email!,
+                        authorDisplayName: user.displayName || user.email!,
+                        date: item.dateIso,
+                    }))
+                );
+
+                await fetchReports(user.email);
+                setGeminiResult(null);
+                showAlert(
+                    t("gemini.expensesAddedSuccess", { count: approved.length }),
+                    "success"
+                );
+            } catch {
+                showAlert(t("gemini.expensesAddError"), "error");
+            } finally {
+                setLoading(false);
+            }
+        },
+        [fetchReports, showAlert, singleActiveReport, t, user]
+    );
+
     return (
         <div className="reports-container">
             <Alert alert={alert} />
@@ -315,6 +381,7 @@ const ReportsPage = () => {
                     smsTrackingEnabled={smsTrackingEnabled}
                     toggleSmsTracking={toggleSmsTracking}
                     showContacts={() => setShowContacts(true)}
+                    openGeminiSettings={() => setShowGeminiKeyModal(true)}
                     openTrash={() => navigate("/trash")}
                     showCategories={() => setShowCategories(true)}
                     handleLogout={handleLogout}
@@ -548,14 +615,29 @@ const ReportsPage = () => {
                 </div>
             </main>
 
-            {/* Floating Add Button */}
-            <button
-                className="add-report-btn"
-                aria-label={t("reports.addReportHeader")}
-                onClick={() => setIsModalOpen(true)}
-            >
-                <FiPlus size={24} />
-            </button>
+            {/* Floating Action Buttons */}
+            <div className="reports-floating-actions">
+                {singleActiveReport && (
+                    <button
+                        type="button"
+                        className="gemini-voice-btn"
+                        onClick={handleVoiceButtonClick}
+                        aria-label={t("gemini.voiceButtonAria")}
+                        title={t("gemini.voiceButtonAria")}
+                    >
+                        <FiMic size={21} />
+                        <span className="gemini-voice-btn-badge">AI</span>
+                    </button>
+                )}
+
+                <button
+                    className="add-report-btn"
+                    aria-label={t("reports.addReportHeader")}
+                    onClick={() => setIsModalOpen(true)}
+                >
+                    <FiPlus size={24} />
+                </button>
+            </div>
 
             {/* Modal */}
             {isModalOpen && (
@@ -578,6 +660,47 @@ const ReportsPage = () => {
             )}
 
             {showContacts && <Contacts onClose={() => setShowContacts(false)} />}
+            {showGeminiKeyModal && (
+                <GeminiKeyModal
+                    initialApiKey={geminiApiKey}
+                    onClose={() => {
+                        setShowGeminiKeyModal(false);
+                        setPendingVoiceAfterKey(false);
+                    }}
+                    onSaved={(newKey) => {
+                        setGeminiApiKey(newKey);
+                        if (newKey && pendingVoiceAfterKey) {
+                            setShowGeminiKeyModal(false);
+                            setPendingVoiceAfterKey(false);
+                            setShowVoiceRecorder(true);
+                        }
+                    }}
+                />
+            )}
+            {showVoiceRecorder && singleActiveReport && (
+                <GeminiVoiceRecorderModal
+                    apiKey={geminiApiKey}
+                    onClose={() => setShowVoiceRecorder(false)}
+                    onOpenKeySettings={() => {
+                        setShowVoiceRecorder(false);
+                        setPendingVoiceAfterKey(true);
+                        setShowGeminiKeyModal(true);
+                    }}
+                    onExtracted={(result) => {
+                        setShowVoiceRecorder(false);
+                        setGeminiResult(result);
+                    }}
+                />
+            )}
+            {geminiResult && geminiResult.expenses.length > 0 && singleActiveReport && (
+                <GeminiExpenseCarousel
+                    expenses={geminiResult.expenses}
+                    transcript={geminiResult.transcript}
+                    reportTitle={singleActiveReport.title}
+                    onCommitBatch={handleCommitGeminiBatch}
+                    onCancel={() => setGeminiResult(null)}
+                />
+            )}
             {showCategories && <Categories onClose={() => setShowCategories(false)} />}
         </div>
     );

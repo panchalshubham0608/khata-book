@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -24,10 +25,24 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private lateinit var googleAuthManager: GoogleAuthManager
     private lateinit var smsReader: SmsReader
+    private var pendingWebAudioPermissionRequest: PermissionRequest? = null
 
     private val requestSmsPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             sendSmsPermissionResult(isGranted)
+        }
+
+    private val requestAudioPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            val pending = pendingWebAudioPermissionRequest
+            pendingWebAudioPermissionRequest = null
+            if (pending != null) {
+                if (isGranted) {
+                    pending.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                } else {
+                    pending.deny()
+                }
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,8 +128,27 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        webView.webChromeClient =
-            WebChromeClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onPermissionRequest(request: PermissionRequest) {
+                runOnUiThread {
+                    if (request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                        val hasOsPermission = ContextCompat.checkSelfPermission(
+                            this@MainActivity,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (hasOsPermission) {
+                            request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                        } else {
+                            pendingWebAudioPermissionRequest = request
+                            requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    } else {
+                        request.deny()
+                    }
+                }
+            }
+        }
 
         webView.settings.apply {
 

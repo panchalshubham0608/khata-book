@@ -8,6 +8,7 @@ import {
   FiUploadCloud,
   FiArchive,
   FiRotateCcw,
+  FiKey,
 } from "react-icons/fi";
 import ConfirmDialog from "./ConfirmDialog";
 import ManageAccessPopup from "./ManageAccessPopup";
@@ -29,6 +30,7 @@ interface ReportHamburgerMenuProps {
   onUnarchiveReport?: () => void;
   onTopup?: (amount: number, date?: string) => void;
   onBackup?: () => void;
+  onOpenGeminiKey?: () => void;
 }
 
 const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
@@ -45,6 +47,7 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
   onUnarchiveReport,
   onTopup,
   onBackup,
+  onOpenGeminiKey,
 }) => {
   const { t } = useTranslation();
   const [showDeleteReportDialog, setShowDeleteReportDialog] = useState<boolean>(false);
@@ -76,6 +79,18 @@ const ReportHamburgerMenu: React.FC<ReportHamburgerMenuProps> = ({
             icon: <FiUploadCloud size={16} />,
             hideChevron: true,
             onClick: () => setShowBackupDialog(true),
+          },
+        ]
+      : []),
+    ...(onOpenGeminiKey
+      ? [
+          {
+            key: "geminiApiKey",
+            label: t("gemini.menuItemLabel"),
+            sublabel: t("gemini.menuItemSublabel"),
+            icon: <FiKey size={16} />,
+            dividerBefore: canManage,
+            onClick: onOpenGeminiKey,
           },
         ]
       : []),
