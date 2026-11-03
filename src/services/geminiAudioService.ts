@@ -140,16 +140,24 @@ export async function analyzeExpenseAudioWithGemini(
     const mimeType = resolveSupportedMimeType(audioBlob.type);
     const base64Audio = await blobToBase64(audioBlob);
     const todayDate = toLocalDateInputValue();
+    const isHindi = locale === "hi";
 
-    const languageInstruction =
-        locale === "hi"
-            ? "Keep expense titles concise in Hindi (or clear Hinglish/English if spoken in English)."
-            : "Keep expense titles concise and clear (translate or transliterate naturally into English or clean title case).";
+    const languageInstruction = isHindi
+        ? `CRITICAL LANGUAGE RULE: The user's selected app language is Hindi (hi). Always output the "transcript" and every expense "title" in Hindi (Devanagari script, e.g., "दूध", "सब्जी", "पेट्रोल", "चाय"), translating into natural Hindi if spoken in another language.`
+        : `CRITICAL LANGUAGE RULE: The user's selected app language is English (en). Always output the "transcript" and every expense "title" in concise, clear English (Title Case), translating into natural English if spoken in Hindi or another language.`;
+
+    const transcriptDescription = isHindi
+        ? "Transcription of what the user said in the audio, written in Hindi (Devanagari script)."
+        : "Transcription of what the user said in the audio, written in English.";
+
+    const titleDescription = isHindi
+        ? "Short, concise name of the expense or top-up in Hindi (Devanagari script, e.g., 'दूध', 'सब्जी', 'चाय')."
+        : "Short, concise name of the expense or top-up in English (Title Case, e.g., 'Milk', 'Vegetables', 'Tea').";
 
     const systemPrompt = [
         `You are an intelligent expense ledger assistant for Khata Book.`,
         `Listen carefully to the user's voice recording and extract every distinct expense or top-up/income transaction mentioned.`,
-        `Today's date is ${todayDate}. If the speaker mentions a relative date (like yesterday / कल), compute the YYYY-MM-DD date; otherwise use ${todayDate}.`,
+        `Today's date is ${todayDate}. If the speaker mentions a relative date (like yesterday / कल / परसों), compute the YYYY-MM-DD date; otherwise use ${todayDate}.`,
         `By default, set "type" to "debit" for expenses/spending. Only set "type" to "credit" if the speaker explicitly says they received money, added budget, or topped up.`,
         languageInstruction,
         `Return only valid JSON matching the requested schema.`,
@@ -177,8 +185,7 @@ export async function analyzeExpenseAudioWithGemini(
                 properties: {
                     transcript: {
                         type: "STRING",
-                        description:
-                            "Transcription of what the user said in the audio.",
+                        description: transcriptDescription,
                     },
                     expenses: {
                         type: "ARRAY",
@@ -189,8 +196,7 @@ export async function analyzeExpenseAudioWithGemini(
                             properties: {
                                 title: {
                                     type: "STRING",
-                                    description:
-                                        "Short, descriptive name of the expense or top-up.",
+                                    description: titleDescription,
                                 },
                                 amount: {
                                     type: "NUMBER",
