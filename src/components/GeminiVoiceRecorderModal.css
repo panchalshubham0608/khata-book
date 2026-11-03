@@ -1,0 +1,256 @@
+@keyframes geminiRecorderPop {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes geminiPulseRing {
+    0% {
+        transform: scale(0.92);
+        opacity: 0.7;
+    }
+    70% {
+        transform: scale(1.42);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.42);
+        opacity: 0;
+    }
+}
+
+@keyframes geminiSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.gemini-recorder-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    z-index: 2100;
+    box-sizing: border-box;
+    font-family: "Plus Jakarta Sans", "Inter", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.gemini-recorder-box {
+    background: #ffffff;
+    width: 100%;
+    max-width: 390px;
+    border-radius: 22px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
+    animation: geminiRecorderPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gemini-recorder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.gemini-recorder-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gemini-recorder-ai-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%);
+    color: #4f46e5;
+    letter-spacing: 0.02em;
+}
+
+.gemini-recorder-title {
+    margin: 0;
+    font-size: 16.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.gemini-recorder-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.gemini-recorder-close:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.gemini-recorder-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 8px 0 2px;
+}
+
+.gemini-mic-pulse-wrap {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 6px 0;
+}
+
+.gemini-mic-ring {
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    background: rgba(79, 70, 229, 0.22);
+    animation: geminiPulseRing 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+.gemini-mic-ring.ring-2 {
+    animation-delay: 0.6s;
+}
+
+.gemini-mic-circle {
+    position: relative;
+    z-index: 2;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
+}
+
+.gemini-recorder-timer {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+}
+
+.gemini-recorder-status {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.gemini-recorder-example {
+    margin: 0;
+    font-size: 12.5px;
+    color: #64748b;
+    line-height: 1.45;
+    max-width: 310px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 9px 12px;
+}
+
+.gemini-recorder-actions {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.gemini-recorder-btn {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: none;
+    transition: all 0.15s ease;
+}
+
+.gemini-recorder-btn.secondary {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.gemini-recorder-btn.secondary:hover {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.gemini-recorder-btn.primary {
+    flex: 1.4;
+    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28);
+}
+
+.gemini-recorder-btn.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.36);
+}
+
+.gemini-analyzing-spinner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 4px solid #e0e7ff;
+    border-top-color: #4f46e5;
+    animation: geminiSpin 0.85s linear infinite;
+    margin: 12px 0 4px;
+}
+
+.gemini-error-icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: #fef2f2;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gemini-error-text {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #334155;
+    line-height: 1.45;
+}

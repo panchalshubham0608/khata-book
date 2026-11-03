@@ -6,6 +6,7 @@ import {
     FiMessageSquare,
     FiUsers,
     FiTrash2,
+    FiKey,
 } from "react-icons/fi";
 import "./ReportsHamburger.css";
 import HamburgerMenu, { type HamburgerItem } from "./HamburgerMenu";
@@ -17,6 +18,7 @@ interface ReportsHamburgerProps {
     smsTrackingEnabled: boolean;
     toggleSmsTracking: () => void;
     showContacts: () => void;
+    openGeminiSettings?: () => void;
     openTrash: () => void;
     showCategories?: () => void;
     handleLogout: () => void;
@@ -28,6 +30,7 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
     smsTrackingEnabled,
     toggleSmsTracking,
     showContacts,
+    openGeminiSettings,
     openTrash,
     handleLogout,
 }) => {
@@ -58,11 +61,23 @@ const ReportsHamburger: React.FC<ReportsHamburgerProps> = ({
                 }
             },
         },
+        ...(openGeminiSettings
+            ? [
+                  {
+                      key: "geminiApiKey",
+                      label: t("gemini.menuItemLabel"),
+                      sublabel: t("gemini.menuItemSublabel"),
+                      icon: <FiKey size={16} />,
+                      dividerBefore: true,
+                      onClick: openGeminiSettings,
+                  },
+              ]
+            : []),
         {
             key: "contacts",
             label: t("reports.contacts"),
             icon: <FiUsers size={16} />,
-            dividerBefore: true,
+            dividerBefore: !openGeminiSettings,
             onClick: showContacts,
         },
         {

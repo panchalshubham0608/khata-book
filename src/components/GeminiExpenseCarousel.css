@@ -1,0 +1,537 @@
+@keyframes geminiCarouselAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.gemini-carousel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2100;
+    padding: 16px;
+    box-sizing: border-box;
+    font-family: "Plus Jakarta Sans", "Inter", "Noto Sans Devanagari", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.gemini-carousel-container {
+    background: #ffffff;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    box-sizing: border-box;
+    animation: geminiCarouselAppear 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gemini-carousel-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.gemini-carousel-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gemini-carousel-icon-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%);
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gemini-carousel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.gemini-carousel-subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.gemini-carousel-skip-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.gemini-carousel-skip-top:hover:not(:disabled) {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.gemini-transcript-box {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 11px;
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.4;
+    max-height: 60px;
+    overflow-y: auto;
+}
+
+.gemini-transcript-label {
+    font-weight: 700;
+    color: #4f46e5;
+}
+
+.gemini-transcript-text {
+    color: #1e293b;
+}
+
+.gemini-carousel-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 10px;
+}
+
+.gemini-summary-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.gemini-summary-pill.debit {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.gemini-summary-pill.credit {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.gemini-summary-pill-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.gemini-summary-pill.debit .gemini-summary-pill-icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.gemini-summary-pill.credit .gemini-summary-pill-icon {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.gemini-summary-pill-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.gemini-summary-pill-count {
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.gemini-summary-pill-amount {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+/* Carousel navigation row */
+.gemini-carousel-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.gemini-carousel-arrow {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.gemini-carousel-arrow:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.gemini-carousel-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.gemini-carousel-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex: 1;
+}
+
+.gemini-carousel-dot {
+    height: 7px;
+    width: 16px;
+    border-radius: 999px;
+    border: none;
+    padding: 0;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gemini-carousel-dot.active {
+    width: 26px;
+    background: #4f46e5;
+}
+
+.gemini-carousel-dot.approved:not(.active) {
+    background: #22c55e;
+}
+
+.gemini-carousel-dot.rejected:not(.active) {
+    background: #f87171;
+}
+
+.gemini-carousel-step-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gemini-carousel-step-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Expense Card */
+.gemini-carousel-card {
+    border-radius: 16px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.gemini-carousel-card.debit {
+    background: linear-gradient(180deg, #fff5f5 0%, #ffffff 100%);
+    border-color: #fecaca;
+}
+
+.gemini-carousel-card.credit {
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+    border-color: #bbf7d0;
+}
+
+.gemini-carousel-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gemini-type-toggle {
+    display: inline-flex;
+    background: rgba(241, 245, 249, 0.9);
+    padding: 3px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    gap: 3px;
+}
+
+.gemini-type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gemini-type-pill.debit.active {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.gemini-type-pill.credit.active {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.gemini-carousel-amount {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.gemini-carousel-amount.debit {
+    color: #dc2626;
+}
+
+.gemini-carousel-amount.credit {
+    color: #16a34a;
+}
+
+.gemini-decision-chip {
+    align-self: flex-start;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.gemini-decision-chip.approved {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.gemini-decision-chip.rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.gemini-carousel-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.gemini-carousel-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.gemini-carousel-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.gemini-carousel-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.gemini-carousel-input {
+    width: 100%;
+    padding: 9px 11px;
+    font-size: 13.5px;
+    font-family: inherit;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    box-sizing: border-box;
+    background: #ffffff;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gemini-carousel-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+/* Action Buttons */
+.gemini-carousel-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+.gemini-carousel-btn {
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.gemini-carousel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.gemini-carousel-btn.dismiss {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.gemini-carousel-btn.dismiss:hover:not(:disabled) {
+    background: #fee2e2;
+}
+
+.gemini-carousel-btn.approve {
+    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+}
+
+.gemini-carousel-btn.approve:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.36);
+}
+
+/* Review Step */
+.gemini-review-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gemini-review-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.gemini-review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.gemini-review-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background 0.14s ease;
+}
+
+.gemini-review-item:hover {
+    background: #f1f5f9;
+}
+
+.gemini-review-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gemini-review-item-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gemini-review-item-meta {
+    font-size: 11.5px;
+    color: #64748b;
+}
+
+.gemini-review-item-amount {
+    font-size: 14.5px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.gemini-review-item-amount.debit {
+    color: #dc2626;
+}
+
+.gemini-review-item-amount.credit {
+    color: #16a34a;
+}
+
+.gemini-review-empty {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.5;
+}

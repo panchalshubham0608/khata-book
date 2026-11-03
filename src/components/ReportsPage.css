@@ -504,11 +504,59 @@
     color: #dc2626;
 }
 
-/* Floating Add Button aligned with 500px content container */
-.add-report-btn {
+/* Floating Action Buttons aligned with 500px content container */
+.reports-floating-actions {
     position: fixed;
     bottom: 24px;
     right: max(16px, calc(50% - 250px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+}
+
+.gemini-voice-btn {
+    position: relative;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px rgba(124, 58, 237, 0.36);
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.gemini-voice-btn-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ffffff;
+    color: #4f46e5;
+    border: 1.5px solid #4f46e5;
+    border-radius: 999px;
+    padding: 1px 5px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+}
+
+.gemini-voice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(124, 58, 237, 0.46);
+}
+
+.gemini-voice-btn:active {
+    transform: scale(0.96);
+}
+
+.add-report-btn {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: #fff;
     border: none;
@@ -521,7 +569,6 @@
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
     cursor: pointer;
     transition: transform 0.16s ease, box-shadow 0.16s ease;
-    z-index: 100;
 }
 
 .add-report-btn:hover {

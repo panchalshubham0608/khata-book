@@ -4,6 +4,7 @@ import {
     setDoc,
     arrayUnion,
     arrayRemove,
+    deleteField,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import type { UserProfile } from "./types";
@@ -39,8 +40,31 @@ export async function getUserProfile(email?: string): Promise<UserProfile> {
         archivedReports: Array.isArray(data.archivedReports)
             ? data.archivedReports
             : [],
+        geminiApiKey:
+            typeof data.geminiApiKey === "string" && data.geminiApiKey.trim()
+                ? data.geminiApiKey.trim()
+                : undefined,
         updatedAt: data.updatedAt || new Date().toISOString(),
     };
+}
+
+export async function saveGeminiApiKeyForUser(
+    apiKey: string,
+    email?: string
+): Promise<void> {
+    const userEmail = resolveUserEmail(email);
+    const profileRef = doc(db, USERS_COLLECTION, userEmail);
+    const trimmed = apiKey.trim();
+
+    await setDoc(
+        profileRef,
+        {
+            owner: userEmail,
+            geminiApiKey: trimmed ? trimmed : deleteField(),
+            updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+    );
 }
 
 export async function archiveReportForUser(
