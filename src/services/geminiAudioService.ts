@@ -13,8 +13,54 @@ export interface GeminiAudioAnalysisResult {
     expenses: ExtractedGeminiExpense[];
 }
 
-const GEMINI_ENDPOINT =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_BASE_URL =
+    "https://generativelanguage.googleapis.com/v1beta/models";
+
+const CANDIDATE_MODELS = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-flash-latest",
+];
+
+let cachedWorkingModel: string | null = null;
+
+async function discoverAvailableGeminiModel(apiKey: string): Promise<string | null> {
+    try {
+        const res = await fetch(GEMINI_BASE_URL, {
+            method: "GET",
+            headers: {
+                "x-goog-api-key": apiKey,
+            },
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as {
+            models?: Array<{
+                name?: string;
+                supportedGenerationMethods?: string[];
+            }>;
+        };
+        const models = Array.isArray(data.models) ? data.models : [];
+        const eligible = models
+            .filter(
+                (m) =>
+                    typeof m.name === "string" &&
+                    Array.isArray(m.supportedGenerationMethods) &&
+                    m.supportedGenerationMethods.includes("generateContent") &&
+                    !m.name.includes("tts") &&
+                    !m.name.includes("image") &&
+                    !m.name.includes("embedding")
+            )
+            .map((m) => m.name!.replace(/^models\//, ""));
+
+        const flashModel = eligible.find((id) => id.includes("flash"));
+        return flashModel || eligible[0] || null;
+    } catch {
+        return null;
+    }
+}
 
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10 MB limit
 
@@ -109,83 +155,118 @@ export async function analyzeExpenseAudioWithGemini(
         `Return only valid JSON matching the requested schema.`,
     ].join(" ");
 
-    // TODO(security): In a server-backed deployment, route Gemini API calls through a Backend-for-Frontend (BFF)
-    // so API keys remain server-side rather than being sent from the browser client.
-    const response = await fetch(GEMINI_ENDPOINT, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": trimmedKey,
-        },
-        body: JSON.stringify({
-            contents: [
-                {
-                    parts: [
-                        { text: systemPrompt },
-                        {
-                            inlineData: {
-                                mimeType,
-                                data: base64Audio,
-                            },
-                        },
-                    ],
-                },
-            ],
-            generationConfig: {
-                temperature: 0.1,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        transcript: {
-                            type: "STRING",
-                            description:
-                                "Transcription of what the user said in the audio.",
-                        },
-                        expenses: {
-                            type: "ARRAY",
-                            description:
-                                "All individual expenses or top-ups mentioned in the audio.",
-                            items: {
-                                type: "OBJECT",
-                                properties: {
-                                    title: {
-                                        type: "STRING",
-                                        description:
-                                            "Short, descriptive name of the expense or top-up.",
-                                    },
-                                    amount: {
-                                        type: "NUMBER",
-                                        description:
-                                            "Positive numeric amount of the expense or top-up.",
-                                    },
-                                    type: {
-                                        type: "STRING",
-                                        enum: ["debit", "credit"],
-                                        description:
-                                            "'debit' for expense/spend, 'credit' for top-up/income.",
-                                    },
-                                    date: {
-                                        type: "STRING",
-                                        description:
-                                            "Date of the expense in YYYY-MM-DD format.",
-                                    },
-                                },
-                                required: ["title", "amount", "type"],
-                            },
+    const requestBody = JSON.stringify({
+        contents: [
+            {
+                parts: [
+                    { text: systemPrompt },
+                    {
+                        inlineData: {
+                            mimeType,
+                            data: base64Audio,
                         },
                     },
-                    required: ["transcript", "expenses"],
-                },
+                ],
             },
-        }),
+        ],
+        generationConfig: {
+            temperature: 0.1,
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    transcript: {
+                        type: "STRING",
+                        description:
+                            "Transcription of what the user said in the audio.",
+                    },
+                    expenses: {
+                        type: "ARRAY",
+                        description:
+                            "All individual expenses or top-ups mentioned in the audio.",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                title: {
+                                    type: "STRING",
+                                    description:
+                                        "Short, descriptive name of the expense or top-up.",
+                                },
+                                amount: {
+                                    type: "NUMBER",
+                                    description:
+                                        "Positive numeric amount of the expense or top-up.",
+                                },
+                                type: {
+                                    type: "STRING",
+                                    enum: ["debit", "credit"],
+                                    description:
+                                        "'debit' for expense/spend, 'credit' for top-up/income.",
+                                },
+                                date: {
+                                    type: "STRING",
+                                    description:
+                                        "Date of the expense in YYYY-MM-DD format.",
+                                },
+                            },
+                            required: ["title", "amount", "type"],
+                        },
+                    },
+                },
+                required: ["transcript", "expenses"],
+            },
+        },
     });
 
-    if (!response.ok) {
-        if (response.status === 400 || response.status === 401 || response.status === 403) {
+    // TODO(security): In a server-backed deployment, route Gemini API calls through a Backend-for-Frontend (BFF)
+    // so API keys remain server-side rather than being sent from the browser client.
+    const modelsToTry = cachedWorkingModel
+        ? [
+              cachedWorkingModel,
+              ...CANDIDATE_MODELS.filter((m) => m !== cachedWorkingModel),
+          ]
+        : [...CANDIDATE_MODELS];
+
+    const callModel = (modelId: string) =>
+        fetch(`${GEMINI_BASE_URL}/${encodeURIComponent(modelId)}:generateContent`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": trimmedKey,
+            },
+            body: requestBody,
+        });
+
+    let response: Response | null = null;
+    for (const modelId of modelsToTry) {
+        const candidateResponse = await callModel(modelId);
+        if (candidateResponse.status === 404) {
+            continue;
+        }
+        response = candidateResponse;
+        if (candidateResponse.ok) {
+            cachedWorkingModel = modelId;
+        }
+        break;
+    }
+
+    if (!response) {
+        const discoveredModel = await discoverAvailableGeminiModel(trimmedKey);
+        if (discoveredModel) {
+            const discoveredResponse = await callModel(discoveredModel);
+            response = discoveredResponse;
+            if (discoveredResponse.ok) {
+                cachedWorkingModel = discoveredModel;
+            }
+        }
+    }
+
+    if (!response || !response.ok) {
+        const status = response?.status ?? 404;
+        if (status === 400 || status === 401 || status === 403) {
             throw new Error("INVALID_API_KEY_OR_REQUEST");
         }
-        throw new Error(`GEMINI_HTTP_${response.status}`);
+        throw new Error(`GEMINI_HTTP_${status}`);
     }
 
     const payload = await response.json();
