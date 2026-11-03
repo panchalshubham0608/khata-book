@@ -28,14 +28,14 @@
 
 /* Title & Message */
 .cd-title {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   font-weight: 700;
   color: #0f172a;
   margin-bottom: 6px;
 }
 
 .cd-message {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale, 1));
   color: #64748b;
   line-height: 1.45;
   margin-bottom: 18px;
@@ -55,7 +55,7 @@
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale, 1));
   font-weight: 600;
   font-family: inherit;
   transition: background 0.15s ease;

@@ -6,12 +6,15 @@ import {
     isSmsTrackingEnabled,
     setSmsTrackingEnabled,
 } from "../services/smsTrackingService";
-import { useTranslation } from "../i18n/locale";
+import {
+    FONT_SCALE_PRESETS,
+    useTranslation,
+} from "../i18n/locale";
 import LanguageSwitcher from "./LanguageSwitcher";
 import "./SettingsButton.css";
 
 const SettingsButton: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, fontScale, setFontScale } = useTranslation();
     const [open, setOpen] = useState(false);
     const [userEmail, setUserEmail] = useState<string | null>(
         auth.currentUser?.email || null
@@ -82,6 +85,48 @@ const SettingsButton: React.FC = () => {
                 <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
                     <div className="settings-panel-content">
                         <LanguageSwitcher />
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 8,
+                                marginTop: 10,
+                                paddingTop: 10,
+                                borderTop: "1px solid #eee",
+                            }}
+                        >
+                            <label
+                                htmlFor="font-scale-select"
+                                style={{
+                                    fontSize: "calc(14px * var(--font-scale, 1))",
+                                    fontWeight: 500,
+                                }}
+                            >
+                                {t("fontScale.label")}:
+                            </label>
+                            <select
+                                id="font-scale-select"
+                                value={fontScale}
+                                onChange={(e) =>
+                                    setFontScale(Number(e.target.value))
+                                }
+                                style={{
+                                    padding: "6px 8px",
+                                    borderRadius: 6,
+                                    border: "1px solid #ccc",
+                                }}
+                            >
+                                {FONT_SCALE_PRESETS.map((preset) => (
+                                    <option
+                                        key={preset.value}
+                                        value={preset.value}
+                                    >
+                                        {preset.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         {userEmail && (
                             <div
                                 style={{
@@ -96,7 +141,11 @@ const SettingsButton: React.FC = () => {
                             >
                                 <label
                                     htmlFor="sms-tracking-checkbox"
-                                    style={{ fontSize: 14, fontWeight: 500, cursor: "pointer" }}
+                                    style={{
+                                        fontSize: "calc(14px * var(--font-scale, 1))",
+                                        fontWeight: 500,
+                                        cursor: "pointer",
+                                    }}
                                 >
                                     {t("reports.trackSmsTransactions")}
                                 </label>

@@ -5,7 +5,7 @@ const LanguageSwitcher = () => {
 
   return (
     <div className="language-switcher" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <label htmlFor="language-select" style={{ fontSize: 14, fontWeight: 500 }}>
+      <label htmlFor="language-select" style={{ fontSize: "calc(14px * var(--font-scale, 1))", fontWeight: 500 }}>
         {t("language.label")}:
       </label>
       <select

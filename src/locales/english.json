@@ -2,6 +2,8 @@
   "language.label": "Language",
   "language.english": "English",
   "language.hindi": "Hindi",
+  "fontScale.label": "Font Scale",
+  "fontScale.sublabel": "Adjust text & input size for visibility",
   "homepage.title": "Khata Book",
   "homepage.badge": "Personal & Shared Ledger",
   "homepage.description": "Track your daily expenses with a clean and easy interface. Manage your ledger better than before.",

@@ -84,7 +84,7 @@
 }
 
 .hamburger-drawer-title {
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
     font-weight: 700;
     color: #0f172a;
     letter-spacing: -0.01em;
@@ -138,6 +138,9 @@
     gap: 10px;
     padding: 8px 10px;
     border-radius: 12px;
+    font-size: calc(14px * var(--font-scale, 1));
+    font-weight: 600;
+    color: #0f172a;
 }
 
 .hamburger-lang-label-group {
@@ -161,7 +164,7 @@
     border: none;
     background: transparent;
     color: #64748b;
-    font-size: 12.5px;
+    font-size: calc(12.5px * var(--font-scale, 1));
     font-weight: 700;
     padding: 6px 12px;
     border-radius: 7px;
@@ -181,6 +184,104 @@
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
 }
 
+/* Integrated Font Scale Section */
+.hamburger-font-section {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    margin-top: 2px;
+}
+
+.hamburger-font-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: calc(14px * var(--font-scale, 1));
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.hamburger-font-badge {
+    font-size: calc(11.5px * var(--font-scale, 1));
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.hamburger-font-segmented {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: #e2e8f0;
+    padding: 3px;
+    border-radius: 10px;
+    gap: 3px;
+}
+
+.hamburger-font-pill {
+    border: none;
+    background: transparent;
+    color: #475569;
+    font-size: calc(12px * var(--font-scale, 1));
+    font-weight: 700;
+    padding: 6px 4px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.hamburger-font-pill:hover {
+    color: #0f172a;
+}
+
+.hamburger-font-pill.active {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+}
+
+.hamburger-font-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px;
+}
+
+.hamburger-font-slider-mark {
+    font-weight: 700;
+    color: #64748b;
+    user-select: none;
+    line-height: 1;
+}
+
+.hamburger-font-slider-mark.small {
+    font-size: 12px;
+}
+
+.hamburger-font-slider-mark.large {
+    font-size: 17px;
+    color: #0f172a;
+}
+
+.hamburger-font-slider {
+    flex: 1;
+    accent-color: #2563eb;
+    cursor: pointer;
+    height: 5px;
+}
+
 /* Menu Item Row */
 .hamburger-item {
     display: flex;
@@ -193,7 +294,7 @@
     text-align: left;
     cursor: pointer;
     color: #0f172a;
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
     font-weight: 600;
     font-family: inherit;
     transition: background 0.14s ease, color 0.14s ease;
@@ -284,7 +385,7 @@
 }
 
 .hamburger-subtext {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
     font-weight: 500;
     color: #64748b;
     line-height: 1.3;
