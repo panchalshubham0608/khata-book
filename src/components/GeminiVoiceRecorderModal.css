@@ -73,7 +73,7 @@
 }
 
 .gemini-recorder-ai-badge {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
     font-weight: 700;
     padding: 3px 9px;
     border-radius: 999px;
@@ -84,7 +84,7 @@
 
 .gemini-recorder-title {
     margin: 0;
-    font-size: 16.5px;
+    font-size: calc(16.5px * var(--font-scale, 1));
     font-weight: 700;
     color: #0f172a;
 }
@@ -153,7 +153,7 @@
 }
 
 .gemini-recorder-timer {
-    font-size: 26px;
+    font-size: calc(26px * var(--font-scale, 1));
     font-weight: 800;
     color: #0f172a;
     font-variant-numeric: tabular-nums;
@@ -162,14 +162,14 @@
 
 .gemini-recorder-status {
     margin: 0;
-    font-size: 14.5px;
+    font-size: calc(14.5px * var(--font-scale, 1));
     font-weight: 700;
     color: #1e293b;
 }
 
 .gemini-recorder-example {
     margin: 0;
-    font-size: 12.5px;
+    font-size: calc(12.5px * var(--font-scale, 1));
     color: #64748b;
     line-height: 1.45;
     max-width: 310px;
@@ -190,7 +190,7 @@
     flex: 1;
     padding: 11px 14px;
     border-radius: 12px;
-    font-size: 13.5px;
+    font-size: calc(13.5px * var(--font-scale, 1));
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
@@ -249,7 +249,7 @@
 
 .gemini-error-text {
     margin: 0;
-    font-size: 13.5px;
+    font-size: calc(13.5px * var(--font-scale, 1));
     font-weight: 500;
     color: #334155;
     line-height: 1.45;

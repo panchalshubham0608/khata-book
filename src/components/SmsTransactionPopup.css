@@ -52,7 +52,7 @@
 
 .sms-popup-title {
     margin: 0;
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
     font-weight: 700;
     color: #0f172a;
     line-height: 1.25;
@@ -60,7 +60,7 @@
 
 .sms-popup-subtitle {
     margin: 2px 0 0 0;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     color: #64748b;
 }
 
@@ -70,7 +70,7 @@
     border: none;
     border-radius: 999px;
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -99,7 +99,7 @@
     gap: 8px;
     padding: 6px 8px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
 }
 
 .sms-summary-pill.debit {
@@ -140,11 +140,11 @@
 
 .sms-summary-pill-count {
     font-weight: 700;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
 }
 
 .sms-summary-pill-amount {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
     opacity: 0.85;
 }
 
@@ -180,7 +180,7 @@
 }
 
 .sms-popup-step-text {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     font-weight: 600;
     color: #64748b;
 }
@@ -215,7 +215,7 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 999px;
@@ -234,7 +234,7 @@
 }
 
 .sms-popup-amount {
-    font-size: 24px;
+    font-size: calc(24px * var(--font-scale, 1));
     font-weight: 800;
     letter-spacing: -0.02em;
 }
@@ -252,7 +252,7 @@
     border: 1px dashed #cbd5e1;
     border-radius: 10px;
     padding: 10px 12px;
-    font-size: 12.5px;
+    font-size: calc(12.5px * var(--font-scale, 1));
     color: #334155;
     max-height: 84px;
     overflow-y: auto;
@@ -268,12 +268,12 @@
 
 .sms-popup-sender {
     font-weight: 700;
-    font-size: 11.5px;
+    font-size: calc(11.5px * var(--font-scale, 1));
     color: #1e293b;
 }
 
 .sms-popup-time {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
     color: #64748b;
 }
 
@@ -285,7 +285,7 @@
 }
 
 .sms-popup-label {
-    font-size: 12.5px;
+    font-size: calc(12.5px * var(--font-scale, 1));
     font-weight: 600;
     color: #334155;
 }
@@ -294,7 +294,7 @@
 .sms-popup-select {
     width: 100%;
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: calc(15px * var(--font-scale, 1));
     border: 1px solid #cbd5e1;
     border-radius: 10px;
     outline: none;
@@ -314,7 +314,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale, 1));
     color: #1e3a8a;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
@@ -338,7 +338,7 @@
 .sms-popup-btn {
     padding: 11px 16px;
     border-radius: 10px;
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
     font-weight: 600;
     border: none;
     cursor: pointer;
@@ -383,7 +383,7 @@
 }
 
 .sms-review-header {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     font-weight: 700;
     color: #475569;
     text-transform: uppercase;
@@ -417,7 +417,7 @@
 }
 
 .sms-review-item-title {
-    font-size: 13.5px;
+    font-size: calc(13.5px * var(--font-scale, 1));
     font-weight: 600;
     color: #0f172a;
     white-space: nowrap;
@@ -426,13 +426,13 @@
 }
 
 .sms-review-item-report {
-    font-size: 11.5px;
+    font-size: calc(11.5px * var(--font-scale, 1));
     font-weight: 500;
     color: #2563eb;
 }
 
 .sms-review-item-amount {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
     font-weight: 800;
     flex-shrink: 0;
 }
@@ -451,7 +451,7 @@
     border-radius: 12px;
     padding: 18px 14px;
     text-align: center;
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale, 1));
     color: #475569;
     line-height: 1.5;
 }

@@ -69,7 +69,7 @@
   border: none;
   background: transparent;
   color: #64748b;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   font-weight: 700;
   padding: 4px 9px;
   border-radius: 999px;
@@ -153,7 +153,7 @@
 
 .home-badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -166,7 +166,7 @@
 }
 
 .home-title {
-  font-size: 26px;
+  font-size: calc(26px * var(--font-scale, 1));
   font-weight: 800;
   letter-spacing: -0.025em;
   color: #ffffff;
@@ -175,7 +175,7 @@
 }
 
 .home-description {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale, 1));
   color: rgba(255, 255, 255, 0.82);
   margin: 0;
   line-height: 1.55;
@@ -226,7 +226,7 @@
 }
 
 .home-feature-text {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale, 1));
   font-weight: 600;
   color: #1e293b;
   line-height: 1.35;
@@ -240,7 +240,7 @@
   color: #ffffff;
   border: none;
   border-radius: 16px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -272,7 +272,7 @@
   border-radius: 8px;
   background: #ffffff;
   color: #2563eb;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale, 1));
   font-weight: 800;
   display: inline-flex;
   align-items: center;

@@ -121,7 +121,7 @@
     border: none;
     background: transparent;
     color: #9b1d1d;
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
     cursor: pointer;
 }
 

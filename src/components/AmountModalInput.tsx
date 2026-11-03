@@ -119,7 +119,7 @@ const AmountModalInput = (props: AmountModalInputProps) => {
                     )}
                     {props.showCategories && availableCategories.length > 0 && (
                         <div style={{ marginTop: 12 }}>
-                            <div style={{ marginBottom: 8, fontSize: 14, color: '#333' }}>{t("amountModal.selectCategories")}</div>
+                            <div style={{ marginBottom: 8, fontSize: 'calc(14px * var(--font-scale, 1))', color: '#333' }}>{t("amountModal.selectCategories")}</div>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                 {availableCategories.map((c) => (
                                     <button

@@ -22,7 +22,7 @@
     padding: 11px 13px;
     border: none;
     outline: none;
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
     font-family: inherit;
     background: transparent;
     color: #0f172a;

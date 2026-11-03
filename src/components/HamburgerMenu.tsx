@@ -1,7 +1,13 @@
 import React, { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { FiGlobe, FiChevronRight, FiX } from "react-icons/fi";
-import { useTranslation } from "../i18n/locale";
+import { FiGlobe, FiChevronRight, FiX, FiType } from "react-icons/fi";
+import {
+    FONT_SCALE_PRESETS,
+    FONT_SCALE_STEP,
+    MAX_FONT_SCALE,
+    MIN_FONT_SCALE,
+    useTranslation,
+} from "../i18n/locale";
 import "./HamburgerMenu.css";
 
 export interface HamburgerItem {
@@ -34,7 +40,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     showLanguageSwitcher = false,
 }) => {
     const [open, setOpen] = React.useState(false);
-    const { locale, setLocale, t } = useTranslation();
+    const { locale, setLocale, fontScale, setFontScale, t } = useTranslation();
     const drawerTitle = title || t("reports.settingsHeader");
 
     useEffect(() => {
@@ -198,6 +204,80 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                                                 </button>
                                             </div>
                                         </div>
+
+                                        <div className="hamburger-font-section">
+                                            <div className="hamburger-font-header">
+                                                <div className="hamburger-lang-label-group">
+                                                    <span className="hamburger-icon">
+                                                        <FiType size={17} />
+                                                    </span>
+                                                    <div className="hamburger-text-wrap">
+                                                        <span className="hamburger-text">
+                                                            {t("fontScale.label")}
+                                                        </span>
+                                                        <span className="hamburger-subtext">
+                                                            {t("fontScale.sublabel")}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <span className="hamburger-font-badge">
+                                                    {Math.round(fontScale * 100)}%
+                                                </span>
+                                            </div>
+
+                                            <div
+                                                className="hamburger-font-segmented"
+                                                role="group"
+                                                aria-label={t("fontScale.label")}
+                                            >
+                                                {FONT_SCALE_PRESETS.map((preset) => {
+                                                    const isActive =
+                                                        Math.abs(fontScale - preset.value) < 0.03;
+                                                    return (
+                                                        <button
+                                                            key={preset.value}
+                                                            type="button"
+                                                            className={`hamburger-font-pill ${
+                                                                isActive ? "active" : ""
+                                                            }`}
+                                                            onClick={() =>
+                                                                setFontScale(preset.value)
+                                                            }
+                                                        >
+                                                            {preset.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <div className="hamburger-font-slider-row">
+                                                <span
+                                                    className="hamburger-font-slider-mark small"
+                                                    aria-hidden="true"
+                                                >
+                                                    A
+                                                </span>
+                                                <input
+                                                    type="range"
+                                                    className="hamburger-font-slider"
+                                                    min={MIN_FONT_SCALE}
+                                                    max={MAX_FONT_SCALE}
+                                                    step={FONT_SCALE_STEP}
+                                                    value={fontScale}
+                                                    aria-label={t("fontScale.label")}
+                                                    onChange={(e) =>
+                                                        setFontScale(Number(e.target.value))
+                                                    }
+                                                />
+                                                <span
+                                                    className="hamburger-font-slider-mark large"
+                                                    aria-hidden="true"
+                                                >
+                                                    A
+                                                </span>
+                                            </div>
+                                        </div>
+
                                         {regularItems.length > 0 && (
                                             <div className="hamburger-divider" />
                                         )}

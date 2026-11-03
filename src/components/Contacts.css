@@ -66,7 +66,7 @@
 
 .contacts-title {
     margin: 0;
-    font-size: 17px;
+    font-size: calc(17px * var(--font-scale, 1));
     font-weight: 700;
     color: #0f172a;
     letter-spacing: -0.01em;
@@ -74,7 +74,7 @@
 
 .contacts-subtitle {
     margin: 2px 0 0;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     color: #64748b;
     font-weight: 500;
 }
@@ -124,7 +124,7 @@
     padding: 10px 12px 10px 36px;
     border: 1px solid #cbd5e1;
     border-radius: 12px;
-    font-size: 13.5px;
+    font-size: calc(14px * var(--font-scale, 1));
     font-family: inherit;
     color: #0f172a;
     background: #f8fafc;
@@ -150,7 +150,7 @@
     padding: 0 14px;
     border-radius: 12px;
     cursor: pointer;
-    font-size: 13.5px;
+    font-size: calc(13.5px * var(--font-scale, 1));
     font-weight: 600;
     font-family: inherit;
     flex-shrink: 0;
@@ -181,7 +181,7 @@
 }
 
 .contacts-list-title {
-    font-size: 11.5px;
+    font-size: calc(11.5px * var(--font-scale, 1));
     font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
@@ -189,7 +189,7 @@
 }
 
 .contacts-count-pill {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
@@ -223,14 +223,14 @@
 
 .contacts-empty-title {
     margin: 0;
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
     font-weight: 700;
     color: #0f172a;
 }
 
 .contacts-empty-subtext {
     margin: 0;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     color: #64748b;
     max-width: 240px;
     line-height: 1.4;
@@ -278,7 +278,7 @@
     border-radius: 9px;
     background: #dbeafe;
     color: #1d4ed8;
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale, 1));
     font-weight: 700;
     display: inline-flex;
     align-items: center;
@@ -287,7 +287,7 @@
 }
 
 .contacts-email {
-    font-size: 13.5px;
+    font-size: calc(13.5px * var(--font-scale, 1));
     font-weight: 600;
     color: #0f172a;
     word-break: break-all;
@@ -320,7 +320,7 @@
     color: #0f172a;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
