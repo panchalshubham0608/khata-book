@@ -204,6 +204,33 @@ export async function deleteExpense(reportId: string, expenseId: string) {
   await updateDoc(expenseRef, { deleted: true, deletedAt: new Date().toISOString() });
 }
 
+function parseTimestampMs(value?: string | number): number {
+  if (value === undefined || value === null || value === "") return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const asNum = Number(value);
+  if (!Number.isNaN(asNum) && Number.isFinite(asNum)) return asNum;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function getReportLastUpdatedMs(report: Report, expenses: Expense[]): number {
+  let latestMs = Math.max(
+    parseTimestampMs(report.updatedAt),
+    parseTimestampMs(report.createdAt)
+  );
+
+  for (const expense of expenses) {
+    latestMs = Math.max(
+      latestMs,
+      parseTimestampMs(expense.createdAt),
+      parseTimestampMs(expense.updatedAt),
+      parseTimestampMs(expense.deletedAt)
+    );
+  }
+
+  return latestMs;
+}
+
 async function attachExpenses(report: Report): Promise<Report> {
   const expensesRef = collection(db, "reports", report.id, "expenses");
   const expensesSnap = await getDocs(expensesRef);
@@ -219,8 +246,15 @@ async function attachExpenses(report: Report): Promise<Report> {
       return Number(b.createdAt || 0) - Number(a.createdAt || 0);
     }); // newest first
 
+  const lastUpdatedMs = getReportLastUpdatedMs(report, expenses);
+  const updatedAt =
+    lastUpdatedMs > 0
+      ? new Date(lastUpdatedMs).toISOString()
+      : report.updatedAt || report.createdAt;
+
   return {
     ...report,
+    updatedAt,
     expenses,
   };
 }
@@ -273,8 +307,22 @@ export async function getReports(email: string, options: GetReportsOptions): Pro
     }, {} as Record<string, Report>)
   );
 
-  // Attach expenses using shared helper
-  return await Promise.all(uniqueReports.map((r) => attachExpenses(r)));
+  // Attach expenses using shared helper and sort by most recently updated
+  const reportsWithExpenses = await Promise.all(
+    uniqueReports.map((r) => attachExpenses(r))
+  );
+
+  return reportsWithExpenses.sort((r1, r2) => {
+    const archived1 = isReportArchived(r1);
+    const archived2 = isReportArchived(r2);
+    if (archived1 !== archived2) {
+      return archived1 ? 1 : -1;
+    }
+    return (
+      parseTimestampMs(r2.updatedAt || r2.createdAt) -
+      parseTimestampMs(r1.updatedAt || r1.createdAt)
+    );
+  });
 }
 
 export async function getDeletedReports(email: string): Promise<Report[]> {

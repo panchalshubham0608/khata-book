@@ -637,55 +637,55 @@ const ReportDetailsPage = () => {
 
                     <div className="report-hero-metrics">
                         <div className="report-hero-metric">
-                            <span className="report-hero-metric-icon budget">
-                                <FiLayers size={14} />
-                            </span>
-                            <div className="report-hero-metric-text">
+                            <div className="report-hero-metric-header">
+                                <span className="report-hero-metric-icon budget">
+                                    <FiLayers size={12} />
+                                </span>
                                 <span className="report-hero-metric-label">
                                     {t("reports.budgetLabel")}
                                 </span>
-                                <span className="report-hero-metric-value">
-                                    ₹{effectiveBudget.toLocaleString("en-IN")}
-                                </span>
-                                {topupAmount > 0 && (
-                                    <span className="report-hero-metric-sub">
-                                        ₹{report.budget.toLocaleString("en-IN")} + ₹
-                                        {topupAmount.toLocaleString("en-IN")}
-                                    </span>
-                                )}
                             </div>
+                            <span className="report-hero-metric-value">
+                                ₹{effectiveBudget.toLocaleString("en-IN")}
+                            </span>
+                            {topupAmount > 0 && (
+                                <span className="report-hero-metric-sub">
+                                    ₹{report.budget.toLocaleString("en-IN")} + ₹
+                                    {topupAmount.toLocaleString("en-IN")}
+                                </span>
+                            )}
                         </div>
 
                         <div className="report-hero-metric-divider" />
 
                         <div className="report-hero-metric">
-                            <span className="report-hero-metric-icon spent">
-                                <FiTrendingDown size={14} />
-                            </span>
-                            <div className="report-hero-metric-text">
+                            <div className="report-hero-metric-header">
+                                <span className="report-hero-metric-icon spent">
+                                    <FiTrendingDown size={12} />
+                                </span>
                                 <span className="report-hero-metric-label">
                                     {t("reports.spentLabel")}
                                 </span>
-                                <span className="report-hero-metric-value">
-                                    ₹{spentAmount.toLocaleString("en-IN")}
-                                </span>
                             </div>
+                            <span className="report-hero-metric-value">
+                                ₹{spentAmount.toLocaleString("en-IN")}
+                            </span>
                         </div>
 
                         <div className="report-hero-metric-divider" />
 
                         <div className="report-hero-metric">
-                            <span className="report-hero-metric-icon topup">
-                                <FiTrendingUp size={14} />
-                            </span>
-                            <div className="report-hero-metric-text">
+                            <div className="report-hero-metric-header">
+                                <span className="report-hero-metric-icon topup">
+                                    <FiTrendingUp size={12} />
+                                </span>
                                 <span className="report-hero-metric-label">
                                     {t("reportHamburger.topup")}
                                 </span>
-                                <span className="report-hero-metric-value">
-                                    +₹{topupAmount.toLocaleString("en-IN")}
-                                </span>
                             </div>
+                            <span className="report-hero-metric-value">
+                                +₹{topupAmount.toLocaleString("en-IN")}
+                            </span>
                         </div>
                     </div>
                 </section>

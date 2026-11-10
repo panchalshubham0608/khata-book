@@ -245,21 +245,29 @@
 
 .report-hero-metric {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 4px;
     flex: 1;
     min-width: 0;
 }
 
+.report-hero-metric-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    width: 100%;
+}
+
 .report-hero-metric-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 1px;
 }
 
 .report-hero-metric-icon.budget {
@@ -277,33 +285,30 @@
     color: #6ee7b7;
 }
 
-.report-hero-metric-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
 .report-hero-metric-label {
-    font-size: calc(10.5px * var(--font-scale, 1));
+    font-size: calc(11px * var(--font-scale, 1));
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.72);
-    margin-bottom: 1px;
+    color: rgba(255, 255, 255, 0.75);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .report-hero-metric-value {
-    font-size: calc(13.5px * var(--font-scale, 1));
+    font-size: calc(clamp(12px, 3.6vw, 14px) * var(--font-scale, 1));
     font-weight: 700;
     color: #ffffff;
     font-variant-numeric: tabular-nums;
-    word-break: break-word;
+    white-space: nowrap;
+    line-height: 1.25;
 }
 
 .report-hero-metric-sub {
     font-size: calc(10px * var(--font-scale, 1));
     font-weight: 500;
     color: rgba(255, 255, 255, 0.68);
-    margin-top: 2px;
     font-variant-numeric: tabular-nums;
+    line-height: 1.25;
 }
 
 .report-hero-metric-divider {
