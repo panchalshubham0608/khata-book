@@ -6,6 +6,7 @@ export interface Expense {
     authorEmail: string;        // Email of the author who created this expense
     authorDisplayName: string;  // Display name of the author who created this expense
     createdAt: string;          // Timestamp when this expense was created
+    updatedAt?: string;         // Timestamp when this expense was last updated
     deleted?: boolean;          // Soft delete flag
     deletedAt?: string;         // Timestamp when this expense was soft-deleted
     categories?: string[];      // Optional list of category IDs
@@ -17,6 +18,7 @@ export interface Report {
     budget: number;         // Initial budget
     owner: string;          // Owner name (translated Hindi name)
     createdAt: string;      // ISO timestamp
+    updatedAt?: string;     // ISO timestamp when report or its expenses were last updated
     sharedWith: string[];   // List of emails with access
     expenses: Expense[];    // All expenses inside this report
     deleted?: boolean;      // Soft delete flag
