@@ -500,7 +500,6 @@
     text-decoration: line-through;
     opacity: 0.52;
     background: #f8fafc;
-    pointer-events: none;
 }
 
 .expense-type-icon {

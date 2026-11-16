@@ -27,6 +27,7 @@ import {
     deleteExpense,
     deleteReport,
     getReport,
+    restoreExpense,
     restoreReport,
     shareReport,
     unarchiveReport,
@@ -37,6 +38,7 @@ import { getUserProfile } from "../firebase/userProfileService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
+import ConfirmDialog from "./ConfirmDialog";
 import {
     isShared,
     isOwner,
@@ -77,6 +79,7 @@ const ReportDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+    const [restoreExpenseId, setRestoreExpenseId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
@@ -322,6 +325,32 @@ const ReportDetailsPage = () => {
             setLoading(false);
         }
     }, [reportId, selectedExpenseId, showAlert, t]);
+
+    const handleRestoreExpense = useCallback(async () => {
+        try {
+            if (!reportId) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+            if (!restoreExpenseId) {
+                showAlert(t("reportDetails.invalidExpenseId"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await restoreExpense(reportId, restoreExpenseId);
+
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+
+            showAlert(t("reportDetails.restoreExpenseSuccess"), "success");
+        } catch {
+            showAlert(t("reportDetails.restoreExpenseError"), "error");
+        } finally {
+            setRestoreExpenseId(null);
+            setLoading(false);
+        }
+    }, [reportId, restoreExpenseId, showAlert, t]);
 
     const handleDeleteReport = async () => {
         try {
@@ -760,7 +789,10 @@ const ReportDetailsPage = () => {
                                 key={expense.id}
                                 expense={expense}
                                 onAction={() => {
-                                    if (canActOnExpense && !expense.deleted) {
+                                    if (!canActOnExpense) return;
+                                    if (expense.deleted) {
+                                        setRestoreExpenseId(expense.id);
+                                    } else {
                                         setSelectedExpenseId(expense.id);
                                     }
                                 }}
@@ -866,6 +898,17 @@ const ReportDetailsPage = () => {
                     onEdit={handleEditExpense}
                 />
             )}
+
+            <ConfirmDialog
+                open={Boolean(restoreExpenseId)}
+                variant="primary"
+                title={t("reportDetails.restoreExpenseConfirmTitle")}
+                message={t("reportDetails.restoreExpenseConfirmMessage")}
+                confirmText={t("reportDetails.restoreExpenseConfirmConfirmText")}
+                cancelText={t("reportDetails.restoreExpenseConfirmCancelText")}
+                onConfirm={handleRestoreExpense}
+                onCancel={() => setRestoreExpenseId(null)}
+            />
 
             {showGeminiKeyModal && (
                 <GeminiKeyModal
