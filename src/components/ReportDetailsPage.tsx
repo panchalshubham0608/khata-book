@@ -13,6 +13,8 @@ import {
     FiLayers,
     FiArchive,
     FiMic,
+    FiTrash2,
+    FiSliders,
 } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import AmountModalInput from "./AmountModalInput";
@@ -27,6 +29,7 @@ import {
     deleteExpense,
     deleteReport,
     getReport,
+    restoreExpense,
     restoreReport,
     shareReport,
     unarchiveReport,
@@ -37,6 +40,7 @@ import { getUserProfile } from "../firebase/userProfileService";
 import { useAlert } from "../hooks/useAlert";
 import Alert from "./Alert";
 import Loader from "./Loader";
+import ConfirmDialog from "./ConfirmDialog";
 import {
     isShared,
     isOwner,
@@ -45,6 +49,7 @@ import {
     calculateAmountSpent,
     calculateTopupAmount,
     calculateEffectiveBudget,
+    toLocalDateInputValue,
 } from "../utils/reportUtils";
 import { backupReportToGoogleSheets } from "../utils/googleBackup";
 import { type User } from "firebase/auth";
@@ -57,6 +62,24 @@ import GeminiExpenseCarousel, {
 } from "./GeminiExpenseCarousel";
 import type { GeminiAudioAnalysisResult } from "../services/geminiAudioService";
 import { useTranslation } from "../i18n/locale";
+
+interface AdvancedSearchFilters {
+    showOnlyDeleted: boolean;
+    filterType: "all" | "debit" | "credit";
+    minAmount: string;
+    maxAmount: string;
+    startDate: string;
+    endDate: string;
+}
+
+const DEFAULT_ADVANCED_FILTERS: AdvancedSearchFilters = {
+    showOnlyDeleted: false,
+    filterType: "all",
+    minAmount: "",
+    maxAmount: "",
+    startDate: "",
+    endDate: "",
+};
 
 const ReportDetailsPage = () => {
     const { reportId } = useParams();
@@ -77,8 +100,25 @@ const ReportDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [openExpenseModal, setOpenExpenseModal] = useState(false);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+    const [restoreExpenseId, setRestoreExpenseId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+    const [appliedFilters, setAppliedFilters] = useState<AdvancedSearchFilters>(
+        DEFAULT_ADVANCED_FILTERS
+    );
+    const [draftFilters, setDraftFilters] = useState<AdvancedSearchFilters>(
+        DEFAULT_ADVANCED_FILTERS
+    );
+    const [showAdvancedSearch, setShowAdvancedSearch] = useState<boolean>(false);
+
+    const {
+        showOnlyDeleted,
+        filterType,
+        minAmount,
+        maxAmount,
+        startDate,
+        endDate,
+    } = appliedFilters;
 
     useEffect(() => {
         if (!reportId) return;
@@ -323,6 +363,32 @@ const ReportDetailsPage = () => {
         }
     }, [reportId, selectedExpenseId, showAlert, t]);
 
+    const handleRestoreExpense = useCallback(async () => {
+        try {
+            if (!reportId) {
+                showAlert(t("reportDetails.reportIdMissing"), "error");
+                return;
+            }
+            if (!restoreExpenseId) {
+                showAlert(t("reportDetails.invalidExpenseId"), "error");
+                return;
+            }
+
+            setLoading(true);
+            await restoreExpense(reportId, restoreExpenseId);
+
+            const updated = await getReport(reportId);
+            if (updated) setReport(updated);
+
+            showAlert(t("reportDetails.restoreExpenseSuccess"), "success");
+        } catch {
+            showAlert(t("reportDetails.restoreExpenseError"), "error");
+        } finally {
+            setRestoreExpenseId(null);
+            setLoading(false);
+        }
+    }, [reportId, restoreExpenseId, showAlert, t]);
+
     const handleDeleteReport = async () => {
         try {
             if (!reportId) {
@@ -477,23 +543,120 @@ const ReportDetailsPage = () => {
         return () => window.clearTimeout(handler);
     }, [searchTerm]);
 
+    const deletedExpensesCount = useMemo(
+        () =>
+            report
+                ? report.expenses.filter((expense) => Boolean(expense.deleted))
+                      .length
+                : 0,
+        [report]
+    );
+
+    const hasAmountFilter = Boolean(minAmount.trim() !== "" || maxAmount.trim() !== "");
+    const hasDateFilter = Boolean(startDate.trim() !== "" || endDate.trim() !== "");
+    const hasActiveFilters = Boolean(
+        showOnlyDeleted ||
+            filterType !== "all" ||
+            hasAmountFilter ||
+            hasDateFilter
+    );
+
+    const hasDraftFilters = Boolean(
+        draftFilters.showOnlyDeleted ||
+            draftFilters.filterType !== "all" ||
+            draftFilters.minAmount.trim() !== "" ||
+            draftFilters.maxAmount.trim() !== "" ||
+            draftFilters.startDate.trim() !== "" ||
+            draftFilters.endDate.trim() !== ""
+    );
+
+    const handleOpenAdvancedSearch = useCallback(() => {
+        setDraftFilters(appliedFilters);
+        setShowAdvancedSearch(true);
+    }, [appliedFilters]);
+
+    const handleApplyFilters = useCallback(() => {
+        setAppliedFilters(draftFilters);
+        setShowAdvancedSearch(false);
+    }, [draftFilters]);
+
+    const handleResetDraftFilters = useCallback(() => {
+        setDraftFilters(DEFAULT_ADVANCED_FILTERS);
+    }, []);
+
     const filteredExpenses = useMemo(() => {
         if (!report) return [];
-        if (!debouncedSearchTerm) return report.expenses;
 
-        return report.expenses.filter((expense) =>
-            [
+        const minVal =
+            minAmount.trim() !== "" ? Number(minAmount.trim()) : null;
+        const maxVal =
+            maxAmount.trim() !== "" ? Number(maxAmount.trim()) : null;
+        const fromStr = startDate.trim();
+        const toStr = endDate.trim();
+
+        return report.expenses.filter((expense) => {
+            if (showOnlyDeleted && !expense.deleted) {
+                return false;
+            }
+            if (filterType === "debit" && expense.amount >= 0) {
+                return false;
+            }
+            if (filterType === "credit" && expense.amount <= 0) {
+                return false;
+            }
+
+            const absAmount = Math.abs(Number(expense.amount));
+            if (
+                minVal !== null &&
+                Number.isFinite(minVal) &&
+                absAmount < minVal
+            ) {
+                return false;
+            }
+            if (
+                maxVal !== null &&
+                Number.isFinite(maxVal) &&
+                absAmount > maxVal
+            ) {
+                return false;
+            }
+
+            if (fromStr || toStr) {
+                const expDateStr = toLocalDateInputValue(expense.date);
+                if (fromStr && expDateStr < fromStr) {
+                    return false;
+                }
+                if (toStr && expDateStr > toStr) {
+                    return false;
+                }
+            }
+
+            if (!debouncedSearchTerm) return true;
+
+            return [
                 expense.title.toLowerCase(),
                 expense.authorDisplayName.toLowerCase(),
                 expense.authorEmail.toLowerCase(),
                 expense.amount.toString(),
-            ].some((value) => value.includes(debouncedSearchTerm))
-        );
-    }, [report, debouncedSearchTerm]);
+            ].some((value) => value.includes(debouncedSearchTerm));
+        });
+    }, [
+        report,
+        debouncedSearchTerm,
+        showOnlyDeleted,
+        filterType,
+        minAmount,
+        maxAmount,
+        startDate,
+        endDate,
+    ]);
 
     const filteredTotals = useMemo(() => {
         return filteredExpenses.reduce(
             (acc, expense) => {
+                if (!showOnlyDeleted && expense.deleted) {
+                    return acc;
+                }
                 if (expense.amount < 0) {
                     acc.spent += Math.abs(expense.amount);
                 } else {
@@ -503,7 +666,7 @@ const ReportDetailsPage = () => {
             },
             { spent: 0, topup: 0 }
         );
-    }, [filteredExpenses]);
+    }, [filteredExpenses, showOnlyDeleted]);
 
     if (!report) return <Loader visible={true} />;
 
@@ -696,27 +859,139 @@ const ReportDetailsPage = () => {
                         <div className="search-input-wrapper">
                             <FiSearch size={17} className="search-leading-icon" />
                             <input
-                                className="search-input"
+                                className={`search-input ${
+                                    searchTerm ? "has-clear" : ""
+                                }`}
                                 type="search"
                                 value={searchTerm}
                                 placeholder={t("reportDetails.searchPlaceholder")}
                                 aria-label={t("reportDetails.searchPlaceholder")}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            {searchTerm && (
+                            <div className="search-trailing-actions">
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        className="search-clear-btn"
+                                        aria-label="Clear search"
+                                        onClick={() => setSearchTerm("")}
+                                    >
+                                        <FiX size={15} />
+                                    </button>
+                                )}
                                 <button
                                     type="button"
-                                    className="search-clear-btn"
-                                    aria-label="Clear search"
-                                    onClick={() => setSearchTerm("")}
+                                    className={`search-advanced-btn ${
+                                        hasActiveFilters
+                                            ? "has-active-filter"
+                                            : ""
+                                    }`}
+                                    aria-label={t(
+                                        "reportDetails.advancedSearchButtonAria"
+                                    )}
+                                    title={t(
+                                        "reportDetails.advancedSearchButtonAria"
+                                    )}
+                                    onClick={handleOpenAdvancedSearch}
                                 >
-                                    <FiX size={15} />
+                                    <FiSliders size={15} />
+                                    {hasActiveFilters && (
+                                        <span className="search-advanced-badge-dot" />
+                                    )}
                                 </button>
-                            )}
+                            </div>
                         </div>
 
-                        {searchTerm.trim() !== "" && (
+                        {(searchTerm.trim() !== "" || hasActiveFilters) && (
                             <div className="filtered-summary-bar">
+                                {filterType !== "all" && (
+                                    <button
+                                        type="button"
+                                        className="filtered-pill active-filter-chip"
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "all",
+                                            }))
+                                        }
+                                    >
+                                        <span>
+                                            {filterType === "debit"
+                                                ? t(
+                                                      "reportDetails.filterTypeDebit"
+                                                  )
+                                                : t(
+                                                      "reportDetails.filterTypeCredit"
+                                                  )}
+                                        </span>
+                                        <FiX size={12} />
+                                    </button>
+                                )}
+                                {hasAmountFilter && (
+                                    <button
+                                        type="button"
+                                        className="filtered-pill active-filter-chip"
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                minAmount: "",
+                                                maxAmount: "",
+                                            }))
+                                        }
+                                    >
+                                        <span>
+                                            {minAmount && maxAmount
+                                                ? `₹${minAmount} – ₹${maxAmount}`
+                                                : minAmount
+                                                ? `≥ ₹${minAmount}`
+                                                : `≤ ₹${maxAmount}`}
+                                        </span>
+                                        <FiX size={12} />
+                                    </button>
+                                )}
+                                {hasDateFilter && (
+                                    <button
+                                        type="button"
+                                        className="filtered-pill active-filter-chip"
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                startDate: "",
+                                                endDate: "",
+                                            }))
+                                        }
+                                    >
+                                        <FiCalendar size={12} />
+                                        <span>
+                                            {startDate && endDate
+                                                ? `${startDate} → ${endDate}`
+                                                : startDate
+                                                ? `≥ ${startDate}`
+                                                : `≤ ${endDate}`}
+                                        </span>
+                                        <FiX size={12} />
+                                    </button>
+                                )}
+                                {showOnlyDeleted && (
+                                    <button
+                                        type="button"
+                                        className="filtered-pill active-filter-chip"
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                showOnlyDeleted: false,
+                                            }))
+                                        }
+                                    >
+                                        <FiTrash2 size={12} />
+                                        <span>
+                                            {t(
+                                                "reportDetails.showOnlyDeletedFilter"
+                                            )}
+                                        </span>
+                                        <FiX size={12} />
+                                    </button>
+                                )}
                                 <span className="filtered-pill spent">
                                     {t("reportDetails.filteredSpentChip", {
                                         amount: filteredTotals.spent.toLocaleString(
@@ -760,7 +1035,10 @@ const ReportDetailsPage = () => {
                                 key={expense.id}
                                 expense={expense}
                                 onAction={() => {
-                                    if (canActOnExpense && !expense.deleted) {
+                                    if (!canActOnExpense) return;
+                                    if (expense.deleted) {
+                                        setRestoreExpenseId(expense.id);
+                                    } else {
                                         setSelectedExpenseId(expense.id);
                                     }
                                 }}
@@ -865,6 +1143,277 @@ const ReportDetailsPage = () => {
                     onDelete={handleDeleteExpense}
                     onEdit={handleEditExpense}
                 />
+            )}
+
+            <ConfirmDialog
+                open={Boolean(restoreExpenseId)}
+                variant="primary"
+                title={t("reportDetails.restoreExpenseConfirmTitle")}
+                message={t("reportDetails.restoreExpenseConfirmMessage")}
+                confirmText={t("reportDetails.restoreExpenseConfirmConfirmText")}
+                cancelText={t("reportDetails.restoreExpenseConfirmCancelText")}
+                onConfirm={handleRestoreExpense}
+                onCancel={() => setRestoreExpenseId(null)}
+            />
+
+            {showAdvancedSearch && (
+                <div
+                    className="adv-search-overlay"
+                    onClick={() => setShowAdvancedSearch(false)}
+                >
+                    <div
+                        className="adv-search-box"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t("reportDetails.advancedSearchTitle")}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="adv-search-header">
+                            <div className="adv-search-header-left">
+                                <div className="adv-search-header-icon">
+                                    <FiSliders size={18} />
+                                </div>
+                                <h3 className="adv-search-title">
+                                    {t("reportDetails.advancedSearchTitle")}
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                className="adv-search-close-icon"
+                                aria-label={t("contacts.closeButton")}
+                                onClick={() => setShowAdvancedSearch(false)}
+                            >
+                                <FiX size={18} />
+                            </button>
+                        </div>
+
+                        <div className="adv-search-body">
+                            {/* Transaction Type Filter */}
+                            <div className="adv-search-field-group">
+                                <span className="adv-search-field-label">
+                                    {t("reportDetails.filterTypeLabel")}
+                                </span>
+                                <div
+                                    className="adv-search-type-segmented"
+                                    role="group"
+                                    aria-label={t(
+                                        "reportDetails.filterTypeLabel"
+                                    )}
+                                >
+                                    <button
+                                        type="button"
+                                        className={`adv-search-type-pill ${
+                                            draftFilters.filterType === "all"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "all",
+                                            }))
+                                        }
+                                    >
+                                        {t("reportDetails.filterTypeAll")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`adv-search-type-pill debit ${
+                                            draftFilters.filterType === "debit"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "debit",
+                                            }))
+                                        }
+                                    >
+                                        {t("reportDetails.filterTypeDebit")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`adv-search-type-pill credit ${
+                                            draftFilters.filterType === "credit"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "credit",
+                                            }))
+                                        }
+                                    >
+                                        {t("reportDetails.filterTypeCredit")}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Amount Range Filter */}
+                            <div className="adv-search-field-group">
+                                <span className="adv-search-field-label">
+                                    {t("reportDetails.filterAmountRangeLabel")}
+                                </span>
+                                <div className="adv-search-range-row">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="adv-search-range-input"
+                                        placeholder={t(
+                                            "reportDetails.filterMinAmountPlaceholder"
+                                        )}
+                                        aria-label={t(
+                                            "reportDetails.filterMinAmountPlaceholder"
+                                        )}
+                                        value={draftFilters.minAmount}
+                                        onChange={(e) =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                minAmount: e.target.value,
+                                            }))
+                                        }
+                                    />
+                                    <span className="adv-search-range-sep">
+                                        –
+                                    </span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="adv-search-range-input"
+                                        placeholder={t(
+                                            "reportDetails.filterMaxAmountPlaceholder"
+                                        )}
+                                        aria-label={t(
+                                            "reportDetails.filterMaxAmountPlaceholder"
+                                        )}
+                                        value={draftFilters.maxAmount}
+                                        onChange={(e) =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                maxAmount: e.target.value,
+                                            }))
+                                        }
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Date Range Filter */}
+                            <div className="adv-search-field-group">
+                                <span className="adv-search-field-label">
+                                    {t("reportDetails.filterDateRangeLabel")}
+                                </span>
+                                <div className="adv-search-range-row">
+                                    <div className="adv-search-date-col">
+                                        <span className="adv-search-date-sub">
+                                            {t("reportDetails.filterDateFrom")}
+                                        </span>
+                                        <input
+                                            type="date"
+                                            className="adv-search-range-input"
+                                            aria-label={t(
+                                                "reportDetails.filterDateFrom"
+                                            )}
+                                            value={draftFilters.startDate}
+                                            onChange={(e) =>
+                                                setDraftFilters((prev) => ({
+                                                    ...prev,
+                                                    startDate: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                    <div className="adv-search-date-col">
+                                        <span className="adv-search-date-sub">
+                                            {t("reportDetails.filterDateTo")}
+                                        </span>
+                                        <input
+                                            type="date"
+                                            className="adv-search-range-input"
+                                            aria-label={t(
+                                                "reportDetails.filterDateTo"
+                                            )}
+                                            value={draftFilters.endDate}
+                                            onChange={(e) =>
+                                                setDraftFilters((prev) => ({
+                                                    ...prev,
+                                                    endDate: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Show Only Deleted Toggle */}
+                            <button
+                                type="button"
+                                className={`adv-search-option-row ${
+                                    draftFilters.showOnlyDeleted ? "active" : ""
+                                }`}
+                                role="switch"
+                                aria-checked={draftFilters.showOnlyDeleted}
+                                onClick={() =>
+                                    setDraftFilters((prev) => ({
+                                        ...prev,
+                                        showOnlyDeleted: !prev.showOnlyDeleted,
+                                    }))
+                                }
+                            >
+                                <span className="adv-search-option-icon">
+                                    <FiTrash2 size={16} />
+                                </span>
+                                <span className="adv-search-option-text">
+                                    <span className="adv-search-option-label-row">
+                                        <span className="adv-search-option-label">
+                                            {t(
+                                                "reportDetails.showOnlyDeletedFilter"
+                                            )}
+                                        </span>
+                                        <span className="adv-search-option-count">
+                                            {deletedExpensesCount}
+                                        </span>
+                                    </span>
+                                    <span className="adv-search-option-sublabel">
+                                        {t(
+                                            "reportDetails.showOnlyDeletedSublabel"
+                                        )}
+                                    </span>
+                                </span>
+                                <span
+                                    className={`hamburger-switch ${
+                                        draftFilters.showOnlyDeleted
+                                            ? "checked"
+                                            : ""
+                                    }`}
+                                    aria-hidden="true"
+                                >
+                                    <span className="hamburger-switch-thumb" />
+                                </span>
+                            </button>
+                        </div>
+
+                        <div className="adv-search-footer">
+                            {(hasDraftFilters || hasActiveFilters) && (
+                                <button
+                                    type="button"
+                                    className="adv-search-reset-btn"
+                                    onClick={handleResetDraftFilters}
+                                >
+                                    {t("reportDetails.resetFilters")}
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="adv-search-done-btn"
+                                onClick={handleApplyFilters}
+                            >
+                                {t("reportDetails.applyFilters")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {showGeminiKeyModal && (

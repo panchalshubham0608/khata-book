@@ -204,6 +204,15 @@ export async function deleteExpense(reportId: string, expenseId: string) {
   await updateDoc(expenseRef, { deleted: true, deletedAt: new Date().toISOString() });
 }
 
+export async function restoreExpense(reportId: string, expenseId: string) {
+  const expenseRef = doc(db, "reports", reportId, "expenses", expenseId);
+  await updateDoc(expenseRef, {
+    deleted: false,
+    deletedAt: deleteField(),
+    updatedAt: new Date().toISOString(),
+  });
+}
+
 function parseTimestampMs(value?: string | number): number {
   if (value === undefined || value === null || value === "") return 0;
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
