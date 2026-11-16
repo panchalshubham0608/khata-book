@@ -892,7 +892,7 @@ const ReportDetailsPage = () => {
                                     title={t(
                                         "reportDetails.advancedSearchButtonAria"
                                     )}
-                                    onClick={() => setShowAdvancedSearch(true)}
+                                    onClick={handleOpenAdvancedSearch}
                                 >
                                     <FiSliders size={15} />
                                     {hasActiveFilters && (
@@ -908,7 +908,12 @@ const ReportDetailsPage = () => {
                                     <button
                                         type="button"
                                         className="filtered-pill active-filter-chip"
-                                        onClick={() => setFilterType("all")}
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "all",
+                                            }))
+                                        }
                                     >
                                         <span>
                                             {filterType === "debit"
@@ -926,10 +931,13 @@ const ReportDetailsPage = () => {
                                     <button
                                         type="button"
                                         className="filtered-pill active-filter-chip"
-                                        onClick={() => {
-                                            setMinAmount("");
-                                            setMaxAmount("");
-                                        }}
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                minAmount: "",
+                                                maxAmount: "",
+                                            }))
+                                        }
                                     >
                                         <span>
                                             {minAmount && maxAmount
@@ -945,10 +953,13 @@ const ReportDetailsPage = () => {
                                     <button
                                         type="button"
                                         className="filtered-pill active-filter-chip"
-                                        onClick={() => {
-                                            setStartDate("");
-                                            setEndDate("");
-                                        }}
+                                        onClick={() =>
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                startDate: "",
+                                                endDate: "",
+                                            }))
+                                        }
                                     >
                                         <FiCalendar size={12} />
                                         <span>
@@ -966,7 +977,10 @@ const ReportDetailsPage = () => {
                                         type="button"
                                         className="filtered-pill active-filter-chip"
                                         onClick={() =>
-                                            setShowOnlyDeleted(false)
+                                            setAppliedFilters((prev) => ({
+                                                ...prev,
+                                                showOnlyDeleted: false,
+                                            }))
                                         }
                                     >
                                         <FiTrash2 size={12} />
@@ -1189,31 +1203,48 @@ const ReportDetailsPage = () => {
                                     <button
                                         type="button"
                                         className={`adv-search-type-pill ${
-                                            filterType === "all" ? "active" : ""
+                                            draftFilters.filterType === "all"
+                                                ? "active"
+                                                : ""
                                         }`}
-                                        onClick={() => setFilterType("all")}
+                                        onClick={() =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "all",
+                                            }))
+                                        }
                                     >
                                         {t("reportDetails.filterTypeAll")}
                                     </button>
                                     <button
                                         type="button"
                                         className={`adv-search-type-pill debit ${
-                                            filterType === "debit"
+                                            draftFilters.filterType === "debit"
                                                 ? "active"
                                                 : ""
                                         }`}
-                                        onClick={() => setFilterType("debit")}
+                                        onClick={() =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "debit",
+                                            }))
+                                        }
                                     >
                                         {t("reportDetails.filterTypeDebit")}
                                     </button>
                                     <button
                                         type="button"
                                         className={`adv-search-type-pill credit ${
-                                            filterType === "credit"
+                                            draftFilters.filterType === "credit"
                                                 ? "active"
                                                 : ""
                                         }`}
-                                        onClick={() => setFilterType("credit")}
+                                        onClick={() =>
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                filterType: "credit",
+                                            }))
+                                        }
                                     >
                                         {t("reportDetails.filterTypeCredit")}
                                     </button>
@@ -1236,9 +1267,12 @@ const ReportDetailsPage = () => {
                                         aria-label={t(
                                             "reportDetails.filterMinAmountPlaceholder"
                                         )}
-                                        value={minAmount}
+                                        value={draftFilters.minAmount}
                                         onChange={(e) =>
-                                            setMinAmount(e.target.value)
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                minAmount: e.target.value,
+                                            }))
                                         }
                                     />
                                     <span className="adv-search-range-sep">
@@ -1254,9 +1288,12 @@ const ReportDetailsPage = () => {
                                         aria-label={t(
                                             "reportDetails.filterMaxAmountPlaceholder"
                                         )}
-                                        value={maxAmount}
+                                        value={draftFilters.maxAmount}
                                         onChange={(e) =>
-                                            setMaxAmount(e.target.value)
+                                            setDraftFilters((prev) => ({
+                                                ...prev,
+                                                maxAmount: e.target.value,
+                                            }))
                                         }
                                     />
                                 </div>
@@ -1278,9 +1315,12 @@ const ReportDetailsPage = () => {
                                             aria-label={t(
                                                 "reportDetails.filterDateFrom"
                                             )}
-                                            value={startDate}
+                                            value={draftFilters.startDate}
                                             onChange={(e) =>
-                                                setStartDate(e.target.value)
+                                                setDraftFilters((prev) => ({
+                                                    ...prev,
+                                                    startDate: e.target.value,
+                                                }))
                                             }
                                         />
                                     </div>
@@ -1294,9 +1334,12 @@ const ReportDetailsPage = () => {
                                             aria-label={t(
                                                 "reportDetails.filterDateTo"
                                             )}
-                                            value={endDate}
+                                            value={draftFilters.endDate}
                                             onChange={(e) =>
-                                                setEndDate(e.target.value)
+                                                setDraftFilters((prev) => ({
+                                                    ...prev,
+                                                    endDate: e.target.value,
+                                                }))
                                             }
                                         />
                                     </div>
@@ -1307,12 +1350,15 @@ const ReportDetailsPage = () => {
                             <button
                                 type="button"
                                 className={`adv-search-option-row ${
-                                    showOnlyDeleted ? "active" : ""
+                                    draftFilters.showOnlyDeleted ? "active" : ""
                                 }`}
                                 role="switch"
-                                aria-checked={showOnlyDeleted}
+                                aria-checked={draftFilters.showOnlyDeleted}
                                 onClick={() =>
-                                    setShowOnlyDeleted((prev) => !prev)
+                                    setDraftFilters((prev) => ({
+                                        ...prev,
+                                        showOnlyDeleted: !prev.showOnlyDeleted,
+                                    }))
                                 }
                             >
                                 <span className="adv-search-option-icon">
@@ -1337,7 +1383,9 @@ const ReportDetailsPage = () => {
                                 </span>
                                 <span
                                     className={`hamburger-switch ${
-                                        showOnlyDeleted ? "checked" : ""
+                                        draftFilters.showOnlyDeleted
+                                            ? "checked"
+                                            : ""
                                     }`}
                                     aria-hidden="true"
                                 >
@@ -1347,11 +1395,11 @@ const ReportDetailsPage = () => {
                         </div>
 
                         <div className="adv-search-footer">
-                            {hasActiveFilters && (
+                            {(hasDraftFilters || hasActiveFilters) && (
                                 <button
                                     type="button"
                                     className="adv-search-reset-btn"
-                                    onClick={handleResetFilters}
+                                    onClick={handleResetDraftFilters}
                                 >
                                     {t("reportDetails.resetFilters")}
                                 </button>
@@ -1359,9 +1407,9 @@ const ReportDetailsPage = () => {
                             <button
                                 type="button"
                                 className="adv-search-done-btn"
-                                onClick={() => setShowAdvancedSearch(false)}
+                                onClick={handleApplyFilters}
                             >
-                                {t("contacts.closeButton")}
+                                {t("reportDetails.applyFilters")}
                             </button>
                         </div>
                     </div>
