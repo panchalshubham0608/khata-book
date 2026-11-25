@@ -1,9 +1,25 @@
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import type { Report } from "../firebase/types";
+import {
+  buildBackupSheetProperties,
+  buildRichSheetBatches,
+  type BackupSheetProperties,
+  type SheetsBatchUpdateRequest,
+} from "./googleSheetFormatter";
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+
+interface AddSheetBatchResponse {
+  replies?: Array<{
+    addSheet?: {
+      properties?: {
+        sheetId?: number;
+      };
+    };
+  }>;
+}
 
 async function ensureGoogleAccessToken(): Promise<string> {
   const provider = new GoogleAuthProvider();
@@ -54,16 +70,8 @@ function sanitizeFileName(value: string): string {
   return value.replace(/[<>:"/\\|?*]/g, "-").trim() || "backup";
 }
 
-function formatLocalDateTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+function escapeDriveQueryLiteral(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 function formatSheetName(value: string): string {
@@ -83,8 +91,9 @@ function formatSheetName(value: string): string {
 }
 
 async function findFolder(accessToken: string, folderName: string): Promise<string | null> {
+  const escapedName = escapeDriveQueryLiteral(folderName);
   const query = encodeURIComponent(
-    `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g, "\\'")}' and trashed=false`
+    `mimeType='application/vnd.google-apps.folder' and name='${escapedName}' and trashed=false`
   );
 
   const response = await googleApi<{ files?: Array<{ id: string; name: string }> }>(
@@ -112,8 +121,10 @@ async function createFolder(accessToken: string, folderName: string): Promise<st
 }
 
 async function findSpreadsheet(accessToken: string, folderId: string, reportTitle: string): Promise<string | null> {
+  const escapedTitle = escapeDriveQueryLiteral(sanitizeFileName(reportTitle));
+  const escapedFolderId = escapeDriveQueryLiteral(folderId);
   const query = encodeURIComponent(
-    `mimeType='application/vnd.google-apps.spreadsheet' and name='${sanitizeFileName(reportTitle)}' and '${folderId}' in parents and trashed=false`
+    `mimeType='application/vnd.google-apps.spreadsheet' and name='${escapedTitle}' and '${escapedFolderId}' in parents and trashed=false`
   );
 
   const response = await googleApi<{ files?: Array<{ id: string; name: string }> }>(
@@ -141,35 +152,44 @@ async function createSpreadsheet(accessToken: string, fileName: string, folderId
   return createdFile.id;
 }
 
-async function addSheet(accessToken: string, spreadsheetId: string, sheetTitle: string): Promise<void> {
-  await googleApi<unknown>(
+async function addSheet(
+  accessToken: string,
+  spreadsheetId: string,
+  properties: BackupSheetProperties
+): Promise<number> {
+  const response = await googleApi<AddSheetBatchResponse>(
     accessToken,
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`,
     {
       method: "POST",
       body: JSON.stringify({
-        requests: [{
-          addSheet: {
-            properties: {
-              title: sheetTitle,
-            },
-          },
-        }],
+        requests: [{ addSheet: { properties } }],
       }),
     }
   );
+
+  const sheetId = response.replies?.[0]?.addSheet?.properties?.sheetId;
+  if (typeof sheetId !== "number") {
+    throw new Error("Unable to determine created Google Sheet ID.");
+  }
+
+  return sheetId;
 }
 
-async function writeSpreadsheetRows(accessToken: string, spreadsheetId: string, sheetTitle: string, rows: string[][]): Promise<void> {
-  const encodedSheetTitle = encodeURIComponent(sheetTitle);
-  await googleApi<unknown>(
-    accessToken,
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodedSheetTitle}!A1:Z1000?valueInputOption=RAW`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ values: rows }),
-    }
-  );
+async function applyRichSheetBatches(
+  accessToken: string,
+  spreadsheetId: string,
+  batches: SheetsBatchUpdateRequest[][]
+): Promise<void> {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
+
+  for (const requests of batches) {
+    if (requests.length === 0) continue;
+    await googleApi<unknown>(accessToken, url, {
+      method: "POST",
+      body: JSON.stringify({ requests }),
+    });
+  }
 }
 
 export async function backupReportToGoogleSheets(report: Report): Promise<string> {
@@ -187,25 +207,15 @@ export async function backupReportToGoogleSheets(report: Report): Promise<string
     spreadsheetId = await createSpreadsheet(accessToken, reportSpreadsheetName, folderId);
   }
 
-  const sheetTitle = `Backup ${formatSheetName(new Date().toISOString())}`;
-  await addSheet(accessToken, spreadsheetId, sheetTitle);
+  const backupTimestampIso = new Date().toISOString();
+  const sheetTitle = `Backup ${formatSheetName(backupTimestampIso)}`;
+  const sheetProperties = buildBackupSheetProperties(sheetTitle, report.expenses.length);
+  const sheetId = await addSheet(accessToken, spreadsheetId, sheetProperties);
 
-  const rows: string[][] = [
-    ["Report Title", report.title],
-    ["Budget", report.budget.toString()],
-    ["Owner", report.owner],
-    ["Created At", formatLocalDateTime(report.createdAt)],
-    [],
-    ["Title", "Amount", "Date", "Author"],
-    ...report.expenses.map((expense) => [
-      expense.title,
-      expense.amount.toString(),
-      formatLocalDateTime(expense.date),
-      `${expense.authorDisplayName} <${expense.authorEmail}>`,
-    ]),
-  ];
+  const batches = buildRichSheetBatches(sheetId, report, backupTimestampIso);
+  await applyRichSheetBatches(accessToken, spreadsheetId, batches);
 
-  await writeSpreadsheetRows(accessToken, spreadsheetId, sheetTitle, rows);
   return spreadsheetId;
 }
+
 
